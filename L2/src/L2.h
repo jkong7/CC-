@@ -36,6 +36,7 @@ namespace L2 {
     bool memoryStoredLabel = false; 
     bool functionCall = false; 
     bool indirectRegCall = false; 
+    bool livenessAnalysis = false; 
   }; 
 
   class Item {

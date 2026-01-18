@@ -76,7 +76,7 @@ ItemType Memory::kind() const {
 
 std::string Register::emit (const EmitOptions& options) const {
   std::ostringstream s; 
-  std::string reg = options.eightBitRegister ? eightBitReg_assembly_from_register(ID) : options.indirectRegCall ? indirect_call_reg_assembly_from_register(ID) : assembly_from_register(ID); 
+  std::string reg = options.eightBitRegister ? eightBitReg_assembly_from_register(ID) : options.indirectRegCall ? indirect_call_reg_assembly_from_register(ID) : options.livenessAnalysis ? string_from_register(ID) : assembly_from_register(ID); 
   s << reg; 
   return s.str(); 
 }
@@ -108,7 +108,7 @@ std::string Func::emit(const EmitOptions& options) const {
 }
 
 std::string Variable::emit(const EmitOptions& options) const {
-  return ""; 
+  return var; 
 }
 
 std::string StackArg::emit(const EmitOptions& options) const {

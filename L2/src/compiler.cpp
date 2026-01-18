@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <parser.h>
+#include <liveness_analysis.h>
 
 
 void print_help (char *progName){
@@ -62,13 +63,7 @@ int main(
    */
   auto p = L2::parse_file(argv[optind]);
 
-  /*
-   * Generate x86_64 assembly.
-   */
-  //if (enable_code_generator){
-  //  L2::generate_code(p);
-  //}
-
+  L2::analyze_liveness(p); 
 
   return 0;
 }

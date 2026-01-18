@@ -21,6 +21,7 @@ namespace L2 {
     std::string assembly_from_register(RegisterID id); 
     std::string eightBitReg_assembly_from_register(RegisterID ID);
     std::string indirect_call_reg_assembly_from_register(RegisterID id);
+    std::string string_from_register(RegisterID id); 
     std::string assembly_from_cmp(CMP cmp, bool flip);
     std::string jump_assembly_from_cmp(CMP cmp, bool flip); 
 

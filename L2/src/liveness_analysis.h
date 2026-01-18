@@ -50,9 +50,14 @@ namespace L2{
       virtual void act(Instruction_call &i) override; 
       virtual void act(Instruction_reg_inc_dec &i) override; 
       virtual void act(Instruction_lea &i) override; 
+
+      bool isLivenessContributor(const Item* var); 
     private: 
       std::vector<std::vector<livenessSets>> livenessData; 
+      size_t cur_i = 0; 
   }; 
+
+    void analyze_liveness(Program p); 
 
 
 }

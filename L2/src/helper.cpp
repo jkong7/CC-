@@ -184,4 +184,29 @@ namespace L2 {
     return 0; 
   }
 
+
+
+    std::string string_from_register(RegisterID id) {
+    switch (id) {
+      case RegisterID::rax: return "rax";
+      case RegisterID::rbx: return "rbx";
+      case RegisterID::rcx: return "rcx";
+      case RegisterID::rdx: return "rdx";
+      case RegisterID::rsi: return "rsi";
+      case RegisterID::rdi: return "rdi";
+      case RegisterID::rbp: return "rbp";
+      case RegisterID::rsp: return "rsp";
+      case RegisterID::r8:  return "r8";
+      case RegisterID::r9:  return "r9";
+      case RegisterID::r10: return "r10";
+      case RegisterID::r11: return "r11";
+      case RegisterID::r12: return "r12";
+      case RegisterID::r13: return "r13";
+      case RegisterID::r14: return "r14";
+      case RegisterID::r15: return "r15";
+      default:
+        throw std::runtime_error("invalid register");
+    }
+  }
+
 }
