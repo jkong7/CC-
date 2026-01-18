@@ -60,5 +60,4 @@ namespace L2{
 
     void analyze_liveness(Program p); 
 
-
 }
