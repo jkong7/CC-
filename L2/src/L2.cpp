@@ -41,8 +41,8 @@ StackArg::StackArg(Number* n)
     return; 
   }
 
-Memory::Memory (Register *r, Number *n)
-  : reg {r}, offset {n} {
+Memory::Memory (Item *v, Number *n)
+  : var {r}, offset {n} {
     return; 
   }
 
@@ -142,14 +142,14 @@ Instruction_stack_arg_assignment::Instruction_stack_arg_assignment (Item *dst, S
       return;
     }
 
-Instruction_aop::Instruction_aop (Register *dst, AOP a, Item *rhs)
+Instruction_aop::Instruction_aop (Item *dst, AOP a, Item *rhs)
   : dst_ {dst}, 
     aop_ {a},
     rhs_ {rhs} {
       return ;
     }
 
-Instruction_sop::Instruction_sop (Register *dst, SOP s, Item *src)
+Instruction_sop::Instruction_sop (Item *dst, SOP s, Item *src)
   : dst_ {dst}, 
     sop_ {s},
     src_ {src} {
@@ -164,7 +164,7 @@ Instruction_mem_aop::Instruction_mem_aop(Item *lhs, AOP a, Item *rhs)
   return;
 }
 
-Instruction_cmp_assignment::Instruction_cmp_assignment(Register *dst, Item *lhs, CMP c, Item *rhs)
+Instruction_cmp_assignment::Instruction_cmp_assignment(Item *dst, Item *lhs, CMP c, Item *rhs)
   : dst_{dst},
     lhs_{lhs},
     cmp_{c},
@@ -197,13 +197,13 @@ Instruction_call::Instruction_call(CallType ct, Item *callee, Number *n)
   return;
 }
 
-Instruction_reg_inc_dec::Instruction_reg_inc_dec(Register *r, IncDec i)
+Instruction_reg_inc_dec::Instruction_reg_inc_dec(Item *r, IncDec i)
   : dst_{r},
     op_{i} {
   return;
 }
 
-Instruction_lea::Instruction_lea(Register *dst, Register *lhs, Register *rhs, Number *scale)
+Instruction_lea::Instruction_lea(Item *dst, Item *lhs, Item *rhs, Number *scale)
   : dst_{dst},
     lhs_{lhs},
     rhs_{rhs},
@@ -278,11 +278,11 @@ const Item* Instruction_assignment::dst() const { return dst_; }
 const Item* Instruction_stack_arg_assignment::dst() const { return dst_; }
 const StackArg* Instruction_stack_arg_assignment::src() const { return src_; }
 
-const Register* Instruction_aop::dst() const { return dst_; }
+const Item* Instruction_aop::dst() const { return dst_; }
 AOP Instruction_aop::aop() const { return aop_; }
 const Item* Instruction_aop::rhs() const { return rhs_; }
 
-const Register* Instruction_sop::dst() const { return dst_; }
+const Item* Instruction_sop::dst() const { return dst_; }
 SOP Instruction_sop::sop() const { return sop_; }
 const Item* Instruction_sop::src() const { return src_; }
 
@@ -290,7 +290,7 @@ const Item* Instruction_mem_aop::lhs() const { return lhs_; }
 AOP Instruction_mem_aop::aop() const { return aop_; }
 const Item* Instruction_mem_aop::rhs() const { return rhs_; }
 
-const Register* Instruction_cmp_assignment::dst() const { return dst_; }
+const Item* Instruction_cmp_assignment::dst() const { return dst_; }
 const Item* Instruction_cmp_assignment::lhs() const { return lhs_; }
 CMP Instruction_cmp_assignment::cmp() const { return cmp_; }
 const Item* Instruction_cmp_assignment::rhs() const { return rhs_; }
@@ -308,12 +308,12 @@ CallType Instruction_call::callType() const { return callType_; }
 const Item* Instruction_call::callee() const { return callee_; }
 const Number* Instruction_call::nArgs() const { return nArgs_; }
 
-const Register* Instruction_reg_inc_dec::dst() const { return dst_; }
+const Item* Instruction_reg_inc_dec::dst() const { return dst_; }
 IncDec Instruction_reg_inc_dec::op() const { return op_; }
 
-const Register* Instruction_lea::dst() const { return dst_; }
-const Register* Instruction_lea::lhs() const { return lhs_; }
-const Register* Instruction_lea::rhs() const { return rhs_; }
+const Item* Instruction_lea::dst() const { return dst_; }
+const Item* Instruction_lea::lhs() const { return lhs_; }
+const Item* Instruction_lea::rhs() const { return rhs_; }
 const Number* Instruction_lea::scale() const { return scale_; }
 
 }

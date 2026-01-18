@@ -66,6 +66,7 @@ namespace L2{
                 ls.kill.insert(dst->emit(options));
             } 
         }
+        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_stack_arg_assignment& i) {
@@ -79,7 +80,7 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_aop& i) {
         auto &ls = livenessData.back()[cur_i]; 
-        const Register* dst = i.dst(); 
+        const Item* dst = i.dst(); 
         const Item* src = i.rhs(); 
         EmitOptions options; 
         options.livenessAnalysis = true; 
@@ -94,7 +95,7 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_sop& i) {
         auto &ls = livenessData.back()[cur_i]; 
-        const Register* dst = i.dst(); 
+        const Item* dst = i.dst(); 
         const Item* src = i.src(); 
         EmitOptions options; 
         options.livenessAnalysis = true; 
@@ -126,19 +127,44 @@ namespace L2{
     }
 
     void LivenessAnalysisBehavior::act(Instruction_cmp_assignment& i) {
-        
+        auto &ls = livenessData.back()[cur_i]; 
+        const Item* dst = i.dst(); 
+        const Item* lhs = i.lhs(); 
+        const Item* rhs = i.rhs(); 
+        EmitOptions options; 
+        options.livenessAnalysis = true; 
+
+        ls.kill.insert(dst->emit(options)); 
+        if (isLivenessContributor(lhs)) {
+            ls.gen.insert(lhs->emit(options)); 
+        }
+        if (isLivenessContributor(rhs)) {
+            ls.gen.insert(rhs->emit(options));
+        }
+        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_cjump& i) {
-        
+        auto &ls = livenessData.back()[cur_i]; 
+        const Item* lhs = i.lhs(); 
+        const Item* rhs = i.rhs(); 
+        EmitOptions options; 
+        options.livenessAnalysis = true; 
+        if (isLivenessContributor(lhs)) {
+            ls.gen.insert(lhs->emit(options)); 
+        }
+        if (isLivenessContributor(rhs)) {
+            ls.gen.insert(rhs->emit(options));
+        }
+        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_label& i) {
-        
+        // empty gen + kill
     }
 
     void LivenessAnalysisBehavior::act(Instruction_goto& i) {
-        
+        // empty gen + kill
     }
 
     void LivenessAnalysisBehavior::act(Instruction_ret& i) {
@@ -150,11 +176,26 @@ namespace L2{
     }
 
     void LivenessAnalysisBehavior::act(Instruction_reg_inc_dec& i) {
-        
+        auto &ls = livenessData.back()[cur_i];
+        const Item* dst = i.dst(); 
+        EmitOptions options; 
+        options.livenessAnalysis = true; 
+        ls.gen.insert(dst->emit(options)); 
+        ls.kill.insert(dst->emit(options)); 
+        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_lea& i) {
-        
+        auto &ls = livenessData.back()[cur_i]; 
+        const Item* dst = i.dst();
+        const Item* lhs = i.lhs();
+        const Item* rhs = i.rhs();
+        EmitOptions options; 
+        options.livenessAnalysis = true; 
+        ls.gen.insert(lhs->emit(options)); 
+        ls.gen.insert(rhs->emit(options)); 
+        ls.kill.insert(dst->emit(options));
+        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void analyze_liveness(Program p) {

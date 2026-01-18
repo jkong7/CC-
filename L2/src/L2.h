@@ -110,12 +110,12 @@ namespace L2 {
 
   class Memory : public Item {
     public: 
-      Memory (Register *r, Number *n); 
+      Memory (Item *v, Number *n); 
       std::string emit(const EmitOptions& options = EmitOptions{}) const override;
       ItemType kind() const override; 
 
     private: 
-      Register *reg; 
+      Item *var; 
       Number *offset; 
   };
 
@@ -165,15 +165,15 @@ namespace L2 {
 
   class Instruction_aop : public Instruction {
   public:
-    Instruction_aop(Register* dst, AOP a, Item* rhs);
+    Instruction_aop(Item* dst, AOP a, Item* rhs);
     void accept(Behavior& b) override;
 
-    const Register* dst() const;
+    const Item* dst() const;
     AOP aop() const;
     const Item* rhs() const;
 
   private:
-    Register* dst_;
+    Item* dst_;
     AOP aop_;
     Item* rhs_;
   };
@@ -181,15 +181,15 @@ namespace L2 {
 
   class Instruction_sop : public Instruction {
   public:
-    Instruction_sop(Register* dst, SOP s, Item* src);
+    Instruction_sop(Item* dst, SOP s, Item* src);
     void accept(Behavior& b) override;
 
-    const Register* dst() const;
+    const Item* dst() const;
     SOP sop() const;
     const Item* src() const;
 
   private:
-    Register* dst_;
+    Item* dst_;
     SOP sop_;
     Item* src_;
   };
@@ -213,16 +213,16 @@ namespace L2 {
 
   class Instruction_cmp_assignment : public Instruction {
   public:
-    Instruction_cmp_assignment(Register* dst, Item* lhs, CMP c, Item* rhs);
+    Instruction_cmp_assignment(Item* dst, Item* lhs, CMP c, Item* rhs);
     void accept(Behavior& b) override;
 
-    const Register* dst() const;
+    const Item* dst() const;
     const Item* lhs() const;
     CMP cmp() const;
     const Item* rhs() const;
 
   private:
-    Register* dst_;
+    Item* dst_;
     Item* lhs_;
     CMP cmp_;
     Item* rhs_;
@@ -295,32 +295,32 @@ namespace L2 {
 
   class Instruction_reg_inc_dec : public Instruction {
   public:
-    Instruction_reg_inc_dec(Register* r, IncDec i);
+    Instruction_reg_inc_dec(Item* r, IncDec i);
     void accept(Behavior& b) override;
 
-    const Register* dst() const;
+    const Item* dst() const;
     IncDec op() const;
 
   private:
-    Register* dst_;
+    Item* dst_;
     IncDec op_;
   };
 
 
   class Instruction_lea : public Instruction {
   public:
-    Instruction_lea(Register* dst, Register* lhs, Register* rhs, Number* n);
+    Instruction_lea(Item* dst, Item* lhs, Item* rhs, Number* n);
     void accept(Behavior& b) override;
 
-    const Register* dst() const;
-    const Register* lhs() const;
-    const Register* rhs() const;
+    const Item* dst() const;
+    const Item* lhs() const;
+    const Item* rhs() const;
     const Number* scale() const;
 
   private:
-    Register* dst_;
-    Register* lhs_;
-    Register* rhs_;
+    Item* dst_;
+    Item* lhs_;
+    Item* rhs_;
     Number* scale_;
   };
 

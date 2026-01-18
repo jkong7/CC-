@@ -826,7 +826,7 @@ struct Instruction_rule:
       auto dst = parsed_items.back();
       parsed_items.pop_back();
 
-      auto mem = new Memory(static_cast<Register*> (src), static_cast<Number*> (num));
+      auto mem = new Memory(src, static_cast<Number*> (num));
 
       /* 
        * Create the instruction.
@@ -862,7 +862,7 @@ struct Instruction_rule:
       auto dst = parsed_items.back();
       parsed_items.pop_back();
 
-      auto mem = new Memory(static_cast<Register*> (dst), static_cast<Number*> (num));
+      auto mem = new Memory(dst, static_cast<Number*> (num));
 
       /* 
        * Create the instruction.
@@ -935,7 +935,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_aop(static_cast<Register*>(dst), last_aop, rhs);
+      auto i = new Instruction_aop(dst, last_aop, rhs);
 
       /* 
        * Add the just-created instruction to the current function.
@@ -967,7 +967,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_sop(static_cast<Register*>(dst), last_sop, rhs);
+      auto i = new Instruction_sop(dst, last_sop, rhs);
 
       /* 
        * Add the just-created instruction to the current function.
@@ -1001,7 +1001,7 @@ struct Instruction_rule:
       parsed_items.pop_back();
 
 
-      auto mem = new Memory(static_cast<Register*> (dst), static_cast<Number*> (num));
+      auto mem = new Memory(dst, static_cast<Number*> (num));
 
 
       /* 
@@ -1041,7 +1041,7 @@ struct Instruction_rule:
       parsed_items.pop_back();
 
 
-      auto mem = new Memory(static_cast<Register*> (src), static_cast<Number*> (num));
+      auto mem = new Memory(src, static_cast<Number*> (num));
 
 
       /* 
@@ -1083,7 +1083,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_cmp_assignment(static_cast<Register*>(dst), lhs, last_cmp, rhs);
+      auto i = new Instruction_cmp_assignment(dst, lhs, last_cmp, rhs);
 
       /* 
        * Add the just-created instruction to the current function.
@@ -1383,7 +1383,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_reg_inc_dec(static_cast<Register*>(dst), IncDec::increment); 
+      auto i = new Instruction_reg_inc_dec(dst, IncDec::increment); 
 
       /* 
        * Add the just-created instruction to the current function.
@@ -1414,7 +1414,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_reg_inc_dec(static_cast<Register*>(dst), IncDec::decrement); 
+      auto i = new Instruction_reg_inc_dec(dst, IncDec::decrement); 
 
       /* 
        * Add the just-created instruction to the current function.
@@ -1452,7 +1452,7 @@ struct Instruction_rule:
       /* 
        * Create the instruction.
        */ 
-      auto i = new Instruction_lea(static_cast<Register*>(dst), static_cast<Register*>(lhs), static_cast<Register*>(rhs), static_cast<Number*>(number)); 
+      auto i = new Instruction_lea(dst, lhs, rhs, static_cast<Number*>(number)); 
 
       /* 
        * Add the just-created instruction to the current function.
