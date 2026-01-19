@@ -63,6 +63,10 @@ int main(
    */
   auto p = L2::parse_file(argv[optind]);
 
+  /*
+   * Perform liveness analysis 
+   */
+
   L2::analyze_liveness(p); 
 
   return 0;

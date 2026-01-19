@@ -209,4 +209,22 @@ namespace L2 {
     }
   }
 
+  std::unordered_set<std::string> set_difference(const std::unordered_set<std::string> A, const std::unordered_set<std::string> B) {
+    std::unordered_set<std::string> res; 
+    for (const auto& s: A) {
+      if (B.find(s) == B.end()) {
+        res.insert(s);
+      }
+    }
+    return res; 
+  }
+
+  std::unordered_set<std::string> set_union(const std::unordered_set<std::string> A, const std::unordered_set<std::string> B) {
+    std::unordered_set<std::string> res = A; 
+    for (const auto& s: B) {
+      res.insert(s);
+    }
+    return res; 
+  }
+
 }

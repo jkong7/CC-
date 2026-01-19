@@ -2,6 +2,7 @@
 
 #include <string_view> 
 #include <stdexcept>
+#include <unordered_set>
 
 #include <L2.h> 
 
@@ -24,6 +25,9 @@ namespace L2 {
     std::string string_from_register(RegisterID id); 
     std::string assembly_from_cmp(CMP cmp, bool flip);
     std::string jump_assembly_from_cmp(CMP cmp, bool flip); 
+
+    std::unordered_set<std::string> set_difference (const std::unordered_set<std::string> A, const std::unordered_set<std::string> B);
+    std::unordered_set<std::string> set_union (const std::unordered_set<std::string> A, const std::unordered_set<std::string> B);
 
     int comp(int64_t lhs, int64_t rhs, CMP op); 
 }
