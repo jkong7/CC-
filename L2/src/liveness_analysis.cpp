@@ -8,7 +8,7 @@
 
 namespace L2{
 
-    LivenessAnalysisBehavior::LivenessAnalysisBehavior(std::ofstream &out)
+    LivenessAnalysisBehavior::LivenessAnalysisBehavior(std::ostream &out)
     : out (out) {
       return; 
     }
@@ -18,7 +18,7 @@ namespace L2{
             f->accept(*this); 
         }
         generate_in_out_sets(p);
-        write_to_file_in_out_sets();
+        print_liveness_tests();
     }
 
     void LivenessAnalysisBehavior::act(Function& f) {
@@ -47,7 +47,6 @@ namespace L2{
                 ls.kill.insert(dst->emit(options));
             } 
         }
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_stack_arg_assignment& i) {
@@ -75,7 +74,6 @@ namespace L2{
             ls.gen.insert(dst->emit(options)); 
             ls.kill.insert(dst->emit(options)); 
         }
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_sop& i) {
@@ -92,7 +90,6 @@ namespace L2{
             ls.gen.insert(dst->emit(options)); 
             ls.kill.insert(dst->emit(options));
         } 
-        print_instruction_gen_kill(cur_i, ls); 
     }
     
     void LivenessAnalysisBehavior::act(Instruction_mem_aop& i) {
@@ -110,7 +107,6 @@ namespace L2{
         if (isLivenessContributor(rhs)) {
             ls.gen.insert(rhs->emit(options));
         }
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_cmp_assignment& i) {
@@ -129,7 +125,6 @@ namespace L2{
         if (isLivenessContributor(rhs)) {
             ls.gen.insert(rhs->emit(options));
         }
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_cjump& i) {
@@ -144,7 +139,6 @@ namespace L2{
         if (isLivenessContributor(rhs)) {
             ls.gen.insert(rhs->emit(options));
         }
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_label& i) {
@@ -164,7 +158,6 @@ namespace L2{
         std::unordered_set<std::string> callee_save_registers = {"r12", "r13", "r14", "r15", "rbp", "rbx"}; 
         ls.gen.insert("rax"); 
         ls.gen.insert(callee_save_registers.begin(), callee_save_registers.end()); 
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_call& i) {
@@ -186,7 +179,6 @@ namespace L2{
         for (int argIndex = 0; argIndex < std::min(num_args, static_cast<int64_t>(6)); argIndex++) {
             ls.gen.insert(argument_registers[argIndex]);
         }
-        print_instruction_gen_kill(cur_i, ls);
     }
 
     void LivenessAnalysisBehavior::act(Instruction_reg_inc_dec& i) {
@@ -198,7 +190,6 @@ namespace L2{
             ls.gen.insert(dst->emit(options)); 
             ls.kill.insert(dst->emit(options));
         } 
-        print_instruction_gen_kill(cur_i, ls); 
     }
 
     void LivenessAnalysisBehavior::act(Instruction_lea& i) {
@@ -216,8 +207,7 @@ namespace L2{
         }
         if (isLivenessContributor(dst)) {
             ls.kill.insert(dst->emit(options));
-        }        
-        print_instruction_gen_kill(cur_i, ls); 
+        }         
     }
 
 
@@ -264,6 +254,7 @@ namespace L2{
             auto& functionLivenessData = livenessData[i]; 
             auto& functionLabelMap = labelMap[i]; 
             while (change) {
+                change = false; 
                 for (int j = (int)functionLivenessData.size()-1; j>=0; j--) {
                     livenessSets& ls = functionLivenessData[j];
                     std::unordered_set<std::string> original_in = ls.in; 
@@ -290,7 +281,9 @@ namespace L2{
                     }
                     std::unordered_set out_kill_diff_set = set_difference(ls.out, ls.kill);
                     ls.in = set_union(ls.gen, out_kill_diff_set);
-                    change = ls.in != original_in || ls.out != original_out; 
+                    if (ls.in != original_in || ls.out != original_out) {
+                        change = true;
+                    }
                 }
             }
         }
@@ -325,7 +318,7 @@ namespace L2{
         }
     }
 
-    void LivenessAnalysisBehavior::write_paren_set(const std::unordered_set<std::string>& s) {
+    void LivenessAnalysisBehavior::print_paren_set(const std::unordered_set<std::string>& s) {
         if (s.empty()) {
             out << "()\n";
             return;
@@ -343,21 +336,21 @@ namespace L2{
         out << ")\n";
     }
 
-    void LivenessAnalysisBehavior::write_to_file_in_out_sets() {
+    void LivenessAnalysisBehavior::print_liveness_tests() {
         const size_t f = 0;
 
         out << "(\n";
 
         out << "(in\n";
         for (size_t i = 0; i < livenessData[f].size(); ++i) {
-            write_paren_set(livenessData[f][i].in);
+            print_paren_set(livenessData[f][i].in);
         }
 
         out << ")\n\n";
 
         out << "(out\n";
         for (size_t i = 0; i < livenessData[f].size(); ++i) {
-            write_paren_set(livenessData[f][i].out);
+            print_paren_set(livenessData[f][i].out);
         }
 
         out << ")\n\n";
@@ -366,13 +359,9 @@ namespace L2{
     }
 
     void analyze_liveness(Program p) {
-        std::ofstream outputFile; 
-        outputFile.open("prog.S"); 
 
-        LivenessAnalysisBehavior b(outputFile);
+        LivenessAnalysisBehavior b(std::cout);
         p.accept(b); 
-
-        outputFile.close(); 
 
         return;
     }

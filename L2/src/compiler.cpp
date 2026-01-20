@@ -13,9 +13,18 @@
 #include <iostream>
 #include <assert.h>
 
+#include <fstream>
+#include <sstream>
+
 #include <parser.h>
 #include <liveness_analysis.h>
 
+std::string read_file(const char *path) {
+  std::ifstream in(path);
+  std::stringstream buffer;
+  buffer << in.rdbuf();
+  return buffer.str();
+}
 
 void print_help (char *progName){
   std::cerr << "Usage: " << progName << " [-v] [-g 0|1] [-O 0|1|2] SOURCE" << std::endl;
@@ -27,6 +36,7 @@ int main(
   char **argv
   ){
   auto enable_code_generator = false;
+  auto liveness_analysis = false; 
   int32_t optLevel = 0;
   bool verbose;
 
@@ -38,7 +48,7 @@ int main(
     return 1;
   }
   int32_t opt;
-  while ((opt = getopt(argc, argv, "vg:O:")) != -1) {
+  while ((opt = getopt(argc, argv, "vlg:O:")) != -1) {
     switch (opt){
       case 'O':
         optLevel = strtoul(optarg, NULL, 0);
@@ -51,6 +61,10 @@ int main(
       case 'v':
         verbose = true;
         break ;
+      
+      case 'l':
+        liveness_analysis = true;
+        break ;
 
       default:
         print_help(argv[0]);
@@ -58,10 +72,19 @@ int main(
     }
   }
 
+
   /*
    * Parse the input file.
    */
-  auto p = L2::parse_file(argv[optind]);
+  std::string src = read_file(argv[optind]);
+  src = "(@go\n" + src + ")";
+
+  const char *tmp = "/tmp/l2_tmp.L2";
+  std::ofstream out(tmp);
+  out << src;
+  out.close();
+
+  auto p = L2::parse_file((char*)tmp);
 
   /*
    * Perform liveness analysis 
