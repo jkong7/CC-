@@ -289,6 +289,33 @@ namespace L2{
         }
     }
 
+    void LivenessAnalysisBehavior::generate_register_edges() {
+
+    }
+
+    void LivenessAnalysisBehavior::generate_interference_graph(Program p) {
+        for (int i = 0; i<(int)livenessData.size(); i++) {
+            interferenceGraph.emplace_back(); 
+            auto& functionInterferenceGraph = interferenceGraph.back();  
+            auto& functionLivenessData = livenessData[i]; 
+            auto& functionInstructions = p.functions[i]->instructions; 
+            for (int j = 0; j<(int)functionLivenessData.size(); j++) {
+                livenessSets& ls = functionLivenessData[j];
+                Instruction* cur_instruction = functionInstructions[j]; 
+                add_edges_to_graph(functionInterferenceGraph, ls.in, ls.in);
+                add_edges_to_graph(functionInterferenceGraph, ls.out, ls.out);
+                add_edges_to_graph(functionInterferenceGraph, ls.kill, ls.out); 
+                add_edges_to_graph(functionInterferenceGraph, GPregisters, GPregisters);
+                if (auto *shift = dynamic_cast<const Instruction_sop*>(cur_instruction)) {
+                    EmitOptions options; 
+                    options.livenessAnalysis = true; 
+                    std::unordered_set<std::string> rcxVar = {shift->src()->emit(options)};
+                    add_edges_to_graph(functionInterferenceGraph, rcxVar, GPregisters_without_rcx); 
+                }
+            }
+        }
+    }
+
     void LivenessAnalysisBehavior::print_in_out_sets() {
         for (size_t f = 0; f < livenessData.size(); ++f) {
             std::cout << "Function " << f << ":\n";
@@ -356,6 +383,10 @@ namespace L2{
         out << ")\n\n";
 
         out << ")\n";
+    }
+
+    void LivenessAnalysisBehavior::print_interference_tests() {
+        
     }
 
     void analyze_liveness(Program p) {

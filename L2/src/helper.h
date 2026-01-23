@@ -2,11 +2,25 @@
 
 #include <string_view> 
 #include <stdexcept>
-#include <unordered_set>
+#include <unordered_map> 
+#include <unordered_set> 
+#include <vector> 
 
 #include <L2.h> 
 
 namespace L2 {
+
+    inline const std::unordered_set<std::string> GPregisters = {
+    "r10", "r11", "r12", "r13", "r14", "r15",
+    "r8", "r9", "rax", "rbp", "rbx", "rcx",
+    "rdi", "rdx", "rsi"
+    };
+
+    inline const std::unordered_set<std::string> GPregisters_without_rcx = {
+    "r10", "r11", "r12", "r13", "r14", "r15",
+    "r8", "r9", "rax", "rbp", "rbx",
+    "rdi", "rdx", "rsi"
+    };
 
     AOP aop_from_string(std::string_view s);
     SOP sop_from_string(std::string_view s);
@@ -28,6 +42,8 @@ namespace L2 {
 
     std::unordered_set<std::string> set_difference (const std::unordered_set<std::string> A, const std::unordered_set<std::string> B);
     std::unordered_set<std::string> set_union (const std::unordered_set<std::string> A, const std::unordered_set<std::string> B);
+
+    void add_edges_to_graph(std::unordered_map<std::string, std::unordered_set<std::string>>& graph, const std::unordered_set<std::string>& A, const std::unordered_set<std::string>& B);
 
     int comp(int64_t lhs, int64_t rhs, CMP op); 
 }

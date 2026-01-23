@@ -62,13 +62,18 @@ namespace L2{
       bool isNoSuccessorInstruction(const Instruction* i);
 
       void generate_in_out_sets(Program p); 
+      void generate_register_edges(); 
+      void generate_interference_graph(Program p); 
 
       void print_paren_set(const std::unordered_set<std::string>& s);
       void print_liveness_tests();
+
+      void print_interference_tests();
  
     private: 
       std::vector<std::vector<livenessSets>> livenessData; 
       std::vector<std::unordered_map<std::string, size_t>> labelMap; 
+      std::vector<std::unordered_map<std::string, std::unordered_set<std::string>>> interferenceGraph; 
       size_t cur_i = 0; 
 
       std::ostream &out; 
