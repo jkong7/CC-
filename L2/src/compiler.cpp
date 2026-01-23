@@ -27,7 +27,7 @@ std::string read_file(const char *path) {
 }
 
 void print_help (char *progName){
-  std::cerr << "Usage: " << progName << " [-v] [-g 0|1] [-O 0|1|2] SOURCE" << std::endl;
+  std::cerr << "Usage: " << progName << " [-v] [-i] [-g 0|1] [-O 0|1|2] SOURCE" << std::endl;
   return ;
 }
 
@@ -37,6 +37,7 @@ int main(
   ){
   auto enable_code_generator = false;
   auto liveness_analysis = false; 
+  bool interference = false; 
   int32_t optLevel = 0;
   bool verbose;
 
@@ -48,7 +49,7 @@ int main(
     return 1;
   }
   int32_t opt;
-  while ((opt = getopt(argc, argv, "vlg:O:")) != -1) {
+  while ((opt = getopt(argc, argv, "vlig:O:")) != -1) {
     switch (opt){
       case 'O':
         optLevel = strtoul(optarg, NULL, 0);
@@ -65,6 +66,10 @@ int main(
       case 'l':
         liveness_analysis = true;
         break ;
+      
+      case 'i': 
+        interference = true; 
+        break; 
 
       default:
         print_help(argv[0]);

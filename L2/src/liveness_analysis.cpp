@@ -18,7 +18,8 @@ namespace L2{
             f->accept(*this); 
         }
         generate_in_out_sets(p);
-        print_liveness_tests();
+        generate_interference_graph(p); 
+        print_interference_tests(); 
     }
 
     void LivenessAnalysisBehavior::act(Function& f) {
@@ -307,6 +308,9 @@ namespace L2{
                 add_edges_to_graph(functionInterferenceGraph, ls.kill, ls.out); 
                 add_edges_to_graph(functionInterferenceGraph, GPregisters, GPregisters);
                 if (auto *shift = dynamic_cast<const Instruction_sop*>(cur_instruction)) {
+                    if (auto* n = dynamic_cast<const Number*>(shift->src())) {
+                        continue;
+                    }
                     EmitOptions options; 
                     options.livenessAnalysis = true; 
                     std::unordered_set<std::string> rcxVar = {shift->src()->emit(options)};
@@ -386,7 +390,22 @@ namespace L2{
     }
 
     void LivenessAnalysisBehavior::print_interference_tests() {
-        
+        const size_t f = 0; 
+        std::vector<std::string> keys; 
+        std::transform(interferenceGraph[f].begin(), interferenceGraph[f].end(), std::back_inserter(keys), [](const auto& m) {return m.first;});
+        std::sort(keys.begin(), keys.end()); 
+        for (auto& key: keys) {
+            std::vector<std::string> keyConnects; 
+            auto& neighSet = interferenceGraph[f].at(key); 
+            std::transform(neighSet.begin(), neighSet.end(), std::back_inserter(keyConnects), [](const auto& s) {return s;});
+            std::sort(keyConnects.begin(), keyConnects.end()); 
+            out << key;
+            for (const auto& neigh : keyConnects) {
+                if (neigh == key) continue;      
+                    out << " " << neigh;
+                }
+            out << "\n";                    
+        }
     }
 
     void analyze_liveness(Program p) {

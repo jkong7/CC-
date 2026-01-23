@@ -227,14 +227,14 @@ namespace L2 {
     return res; 
   }
 
-    void add_edges_to_graph(std::unordered_map<std::string, std::unordered_set<std::string>>& graph, const std::unordered_set<std::string>& A, const std::unordered_set<std::string>&B) {
-      for (const auto& v1: A) {
-        for (const auto& v2: B) {
-          if (A != B) {
-            graph[v1].insert(v2); 
-            graph[v2].insert(v1);
-          }
-      }
+  void add_edges_to_graph(std::unordered_map<std::string, std::unordered_set<std::string>>& graph, const std::unordered_set<std::string>& A, const std::unordered_set<std::string>&B) {
+    for (const auto& v1: A) {
+      for (const auto& v2: B) {
+        if (v1 != v2) {
+          graph[v1].insert(v2); 
+          graph[v2].insert(v1);
+        }
+      } 
+    }
   }
-
 }
