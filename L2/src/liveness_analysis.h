@@ -64,14 +64,16 @@ namespace L2{
       bool isLivenessContributor(const Item* var); 
       bool isNoSuccessorInstruction(const Instruction* i);
 
-      void generate_in_out_sets(const Program &p); 
-      void generate_interference_graph(const Program &p); 
+      void generate_in_out_sets(const Program &p, size_t functionIndex); 
+      void generate_interference_graph(const Program &p, size_t functionIndex); 
 
       std::string pick_low_node(size_t functionIndex); 
       std::string pick_high_node(size_t functionIndex); 
       void update_graph(const std::string &selected, size_t functionIndex); 
-      void select_nodes(); 
-      void color_graph(); 
+      void select_nodes(size_t functionIndex); 
+
+      bool color_node(const std::string &cur_node, const std::unordered_set<std::string> &neighbors, size_t functionIndex); 
+      void color_graph(size_t functionIndex); 
 
  
     private: 
@@ -83,6 +85,8 @@ namespace L2{
       std::vector<std::unordered_map<std::string, size_t>> nodeDegrees; 
       std::vector<std::unordered_set<std::string>> removed_nodes; 
       std::vector<std::vector<std::string>> node_stack; 
+
+      std::vector<std::unordered_map<std::string, std::string>> colorOutputs; 
 
       std::ostream &out; 
   }; 

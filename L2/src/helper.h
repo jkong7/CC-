@@ -22,6 +22,11 @@ namespace L2 {
     "rdi", "rdx", "rsi"
     };
 
+    inline const std::vector<std::string> colorOrder = {
+    "r10", "r11", "r8", "r9", "rax", "rcx", "rdx", "rsi", "rdi",
+    "rbx", "rbp", "r12", "r13", "r14", "r15"
+    };
+
     AOP aop_from_string(std::string_view s);
     SOP sop_from_string(std::string_view s);
     CMP cmp_from_string(std::string_view s);

@@ -14,12 +14,15 @@ namespace L2{
     }
 
     void LivenessAnalysisBehavior::act(Program& p) {
-        for (Function *f: p.functions) {
-            f->accept(*this); 
+        for (int i = 0; i < p.functions.size(); i++) {
+            p.functions[i]->accept(*this);
+            generate_in_out_sets(p, i);
+            generate_interference_graph(p, i); 
         }
-        generate_in_out_sets(p);
-        generate_interference_graph(p); 
-        print_interference_tests(); 
+
+        //print_liveness_tests();
+        print_interference_tests();
+        
     }
 
     void LivenessAnalysisBehavior::act(Function& f) {
@@ -248,79 +251,75 @@ namespace L2{
         std::cout << "\n\n";  
     }
 
-    void LivenessAnalysisBehavior::generate_in_out_sets(const Program &p) {
-        for (int i = 0; i < (int)livenessData.size(); i++) {
-            bool change = true; 
-            auto& functionInstructions = p.functions[i]->instructions; 
-            auto& functionLivenessData = livenessData[i]; 
-            auto& functionLabelMap = labelMap[i]; 
-            while (change) {
-                change = false; 
-                for (int j = (int)functionLivenessData.size()-1; j>=0; j--) {
-                    livenessSets& ls = functionLivenessData[j];
-                    std::unordered_set<std::string> original_in = ls.in; 
-                    std::unordered_set<std::string> original_out = ls.out; 
-                    Instruction* cur_instruction = functionInstructions[j];
-                    if (isNoSuccessorInstruction(cur_instruction)) {
-                        // no successors, out is empty 
-                    } else if (auto *gt = dynamic_cast<const Instruction_goto*>(cur_instruction)) {
-                        const std::string label = gt->label()->emit();
-                        size_t label_instruction_index = functionLabelMap[label]; 
-                        livenessSets& ls_label_instruction = functionLivenessData[label_instruction_index]; 
-                        ls.out = ls_label_instruction.in;
-                    } else if (auto *cj = dynamic_cast<const Instruction_cjump*>(cur_instruction)) {
-                        const std::string label = cj->label()->emit();
-                        size_t label_instruction_index = functionLabelMap[label]; 
-                        livenessSets& ls_label_instruction = functionLivenessData[label_instruction_index]; 
-                        ls.out = ls_label_instruction.in;
-
-                        livenessSets& ls_next_inst = functionLivenessData[j+1];
-                        ls.out.insert(ls_next_inst.in.begin(), ls_next_inst.in.end()); 
-                    } else {
-                        livenessSets& ls_next_inst = functionLivenessData[j+1]; 
-                        ls.out = ls_next_inst.in; 
-                    }
-                    std::unordered_set out_kill_diff_set = set_difference(ls.out, ls.kill);
-                    ls.in = set_union(ls.gen, out_kill_diff_set);
-                    if (ls.in != original_in || ls.out != original_out) {
-                        change = true;
-                    }
-                }
-            }
-        }
-    }
-
-
-    void LivenessAnalysisBehavior::generate_interference_graph(const Program &p) {
-        for (int i = 0; i<(int)livenessData.size(); i++) {
-            nodeDegrees.emplace_back(); 
-            interferenceGraph.emplace_back(); 
-            auto& functionInterferenceGraph = interferenceGraph.back();  
-            auto& functionLivenessData = livenessData[i]; 
-            auto& functionInstructions = p.functions[i]->instructions; 
-            for (int j = 0; j<(int)functionLivenessData.size(); j++) {
+    void LivenessAnalysisBehavior::generate_in_out_sets(const Program &p, size_t functionIndex) {
+        bool change = true; 
+        auto& functionInstructions = p.functions[functionIndex]->instructions; 
+        auto& functionLivenessData = livenessData[functionIndex]; 
+        auto& functionLabelMap = labelMap[functionIndex]; 
+        while (change) {
+            change = false; 
+            for (int j = (int)functionLivenessData.size()-1; j>=0; j--) {
                 livenessSets& ls = functionLivenessData[j];
-                Instruction* cur_instruction = functionInstructions[j]; 
-                add_edges_to_graph(functionInterferenceGraph, ls.in, ls.in);
-                add_edges_to_graph(functionInterferenceGraph, ls.out, ls.out);
-                add_edges_to_graph(functionInterferenceGraph, ls.kill, ls.out); 
-                add_edges_to_graph(functionInterferenceGraph, GPregisters, GPregisters);
-                if (auto *shift = dynamic_cast<const Instruction_sop*>(cur_instruction)) {
-                    if (auto* n = dynamic_cast<const Number*>(shift->src())) {
-                        continue;
-                    }
-                    EmitOptions options; 
-                    options.livenessAnalysis = true; 
-                    std::unordered_set<std::string> rcxVar = {shift->src()->emit(options)};
-                    add_edges_to_graph(functionInterferenceGraph, rcxVar, GPregisters_without_rcx); 
+                std::unordered_set<std::string> original_in = ls.in; 
+                std::unordered_set<std::string> original_out = ls.out; 
+                Instruction* cur_instruction = functionInstructions[j];
+                if (isNoSuccessorInstruction(cur_instruction)) {
+                    // no successors, out is empty 
+                } else if (auto *gt = dynamic_cast<const Instruction_goto*>(cur_instruction)) {
+                    const std::string label = gt->label()->emit();
+                    size_t label_instruction_index = functionLabelMap[label]; 
+                    livenessSets& ls_label_instruction = functionLivenessData[label_instruction_index]; 
+                    ls.out = ls_label_instruction.in;
+                } else if (auto *cj = dynamic_cast<const Instruction_cjump*>(cur_instruction)) {
+                    const std::string label = cj->label()->emit();
+                    size_t label_instruction_index = functionLabelMap[label]; 
+                    livenessSets& ls_label_instruction = functionLivenessData[label_instruction_index]; 
+                    ls.out = ls_label_instruction.in;
+
+                    livenessSets& ls_next_inst = functionLivenessData[j+1];
+                    ls.out.insert(ls_next_inst.in.begin(), ls_next_inst.in.end()); 
+                } else {
+                    livenessSets& ls_next_inst = functionLivenessData[j+1]; 
+                    ls.out = ls_next_inst.in; 
+                }
+                std::unordered_set out_kill_diff_set = set_difference(ls.out, ls.kill);
+                ls.in = set_union(ls.gen, out_kill_diff_set);
+                if (ls.in != original_in || ls.out != original_out) {
+                    change = true;
                 }
             }
-            for (const auto& [key, val] : functionInterferenceGraph) {
-                nodeDegrees[i][key] = val.size(); 
+        }
+    }
+
+
+    void LivenessAnalysisBehavior::generate_interference_graph(const Program &p, size_t functionIndex) {
+        nodeDegrees.emplace_back(); 
+        interferenceGraph.emplace_back(); 
+        auto& functionInterferenceGraph = interferenceGraph.back();  
+        auto& functionLivenessData = livenessData[functionIndex]; 
+        auto& functionInstructions = p.functions[functionIndex]->instructions; 
+        for (int j = 0; j<(int)functionLivenessData.size(); j++) {
+            livenessSets& ls = functionLivenessData[j];
+            Instruction* cur_instruction = functionInstructions[j]; 
+            add_edges_to_graph(functionInterferenceGraph, ls.in, ls.in);
+            add_edges_to_graph(functionInterferenceGraph, ls.out, ls.out);
+            add_edges_to_graph(functionInterferenceGraph, ls.kill, ls.out); 
+            add_edges_to_graph(functionInterferenceGraph, GPregisters, GPregisters);
+            if (auto *shift = dynamic_cast<const Instruction_sop*>(cur_instruction)) {
+                if (auto* n = dynamic_cast<const Number*>(shift->src())) {
+                    continue;
+                }
+                EmitOptions options; 
+                options.livenessAnalysis = true; 
+                std::unordered_set<std::string> rcxVar = {shift->src()->emit(options)};
+                add_edges_to_graph(functionInterferenceGraph, rcxVar, GPregisters_without_rcx); 
             }
         }
-        
+        for (const auto& [key, val] : functionInterferenceGraph) {
+            nodeDegrees[functionIndex][key] = val.size(); 
+        }
     }
+        
 
     std::string LivenessAnalysisBehavior::pick_low_node(size_t functionIndex) {
         size_t best = 0; 
@@ -365,34 +364,61 @@ namespace L2{
         }
     }
 
-    void LivenessAnalysisBehavior::select_nodes() {
-        for (int i = 0; i < (int)nodeDegrees.size(); i++) {
-            auto& functionNodeDegrees = nodeDegrees[i]; 
-            bool hasPick = true; 
-            while (hasPick) {
-                std::string selected; 
-                std::string low_node = pick_low_node(i);
-                if (low_node.empty()) {
-                    std::string high_node = pick_high_node(i);
-                    if (high_node.empty()) {
-                        hasPick = false; 
-                    } else {
-                        selected = high_node; 
-                        node_stack[i].push_back(high_node); 
-                    }
+    void LivenessAnalysisBehavior::select_nodes(size_t functionIndex) {
+        auto& functionNodeDegrees = nodeDegrees[functionIndex]; 
+        bool hasPick = true; 
+        while (hasPick) {
+            std::string selected; 
+            std::string low_node = pick_low_node(functionIndex);
+            if (low_node.empty()) {
+                std::string high_node = pick_high_node(functionIndex);
+                if (high_node.empty()) {
+                    hasPick = false; 
                 } else {
-                    selected = low_node; 
-                    node_stack[i].push_back(low_node); 
+                    selected = high_node; 
+                    node_stack[functionIndex].push_back(high_node); 
                 }
-                if (!selected.empty()) {
-                    update_graph(selected, i); 
+            } else {
+                selected = low_node; 
+                node_stack[functionIndex].push_back(low_node); 
+            }
+            if (!selected.empty()) {
+                update_graph(selected, functionIndex); 
+            }
+        }
+    } 
+
+    bool LivenessAnalysisBehavior::color_node(const std::string &cur_node, const std::unordered_set<std::string> &neighbors, size_t functionIndex) {
+        for (const auto& color : colorOrder) {
+            bool found = true; 
+            for (const auto& neigh : neighbors) {
+                if (color == neigh || (colorOutputs[functionIndex].count(neigh) && color == colorOutputs[functionIndex].at(neigh))) {
+                    found = false; 
+                    break; 
                 }
             }
-        } 
+            if (found) {
+                colorOutputs[functionIndex][cur_node] = color;
+                return true; 
+            }
+        }
+        return false; 
     }
 
-    void LivenessAnalysisBehavior::color_graph() {
-        
+    void LivenessAnalysisBehavior::color_graph(size_t functionIndex) {
+        select_nodes(functionIndex); 
+        auto& functionNodeStack = node_stack[functionIndex]; 
+        auto& functionInterferenceGraph = interferenceGraph[functionIndex]; 
+        colorOutputs.emplace_back(); 
+        bool spill = false; 
+        while (!functionNodeStack.empty()) {
+            std::string cur_node = functionNodeStack.back(); 
+            functionNodeStack.pop_back(); 
+            spill = color_node(cur_node, functionInterferenceGraph[cur_node], functionIndex); 
+        }
+        if (spill) {
+            // spill and start over
+        }
     }
 
     void LivenessAnalysisBehavior::print_in_out_sets() {
