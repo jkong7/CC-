@@ -73,7 +73,9 @@ namespace L2{
       void select_nodes(size_t functionIndex); 
 
       bool color_node(const std::string &cur_node, const std::unordered_set<std::string> &neighbors, size_t functionIndex); 
-      void color_graph(size_t functionIndex); 
+      bool color_graph(size_t functionIndex); 
+
+      void spill(size_t functionIndex); 
 
  
     private: 
@@ -86,6 +88,7 @@ namespace L2{
       std::vector<std::unordered_set<std::string>> removed_nodes; 
       std::vector<std::vector<std::string>> node_stack; 
 
+      std::vector<std::unordered_set<std::string>> spillOutputs; 
       std::vector<std::unordered_map<std::string, std::string>> colorOutputs; 
 
       std::ostream &out; 

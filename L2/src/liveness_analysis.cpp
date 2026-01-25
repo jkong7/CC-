@@ -15,13 +15,17 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Program& p) {
         for (int i = 0; i < p.functions.size(); i++) {
-            p.functions[i]->accept(*this);
-            generate_in_out_sets(p, i);
-            generate_interference_graph(p, i); 
+            while (true) {
+                p.functions[i]->accept(*this);
+                generate_in_out_sets(p, i);
+                generate_interference_graph(p, i); 
+                if (color_graph(i)) break;
+                spill(i);
+            }
         }
 
         //print_liveness_tests();
-        print_interference_tests();
+        //print_interference_tests();
         
     }
 
@@ -399,13 +403,14 @@ namespace L2{
             }
             if (found) {
                 colorOutputs[functionIndex][cur_node] = color;
-                return true; 
+                return false; 
             }
         }
-        return false; 
+        spillOutputs[functionIndex].insert(cur_node); 
+        return true; 
     }
 
-    void LivenessAnalysisBehavior::color_graph(size_t functionIndex) {
+    bool LivenessAnalysisBehavior::color_graph(size_t functionIndex) {
         select_nodes(functionIndex); 
         auto& functionNodeStack = node_stack[functionIndex]; 
         auto& functionInterferenceGraph = interferenceGraph[functionIndex]; 
@@ -414,11 +419,18 @@ namespace L2{
         while (!functionNodeStack.empty()) {
             std::string cur_node = functionNodeStack.back(); 
             functionNodeStack.pop_back(); 
-            spill = color_node(cur_node, functionInterferenceGraph[cur_node], functionIndex); 
+            if (color_node(cur_node, functionInterferenceGraph[cur_node], functionIndex)) {
+                spill = true;
+            } 
         }
         if (spill) {
-            // spill and start over
+            return false; 
         }
+        return true; 
+    }
+
+    void LivenessAnalysisBehavior::spill(size_t functionIndex) {
+
     }
 
     void LivenessAnalysisBehavior::print_in_out_sets() {
