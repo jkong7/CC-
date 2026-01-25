@@ -57,24 +57,32 @@ namespace L2{
 
       void print_instruction_gen_kill(size_t cur_i, const livenessSets& ls);
       void print_in_out_sets();
+      void print_paren_set(const std::unordered_set<std::string>& s);
+      void print_liveness_tests();
+      void print_interference_tests();
 
       bool isLivenessContributor(const Item* var); 
       bool isNoSuccessorInstruction(const Instruction* i);
 
-      void generate_in_out_sets(Program p); 
-      void generate_register_edges(); 
-      void generate_interference_graph(Program p); 
+      void generate_in_out_sets(const Program &p); 
+      void generate_interference_graph(const Program &p); 
 
-      void print_paren_set(const std::unordered_set<std::string>& s);
-      void print_liveness_tests();
+      std::string pick_low_node(size_t functionIndex); 
+      std::string pick_high_node(size_t functionIndex); 
+      void update_graph(const std::string &selected, size_t functionIndex); 
+      void select_nodes(); 
+      void color_graph(); 
 
-      void print_interference_tests();
  
     private: 
       std::vector<std::vector<livenessSets>> livenessData; 
       std::vector<std::unordered_map<std::string, size_t>> labelMap; 
       std::vector<std::unordered_map<std::string, std::unordered_set<std::string>>> interferenceGraph; 
       size_t cur_i = 0; 
+
+      std::vector<std::unordered_map<std::string, size_t>> nodeDegrees; 
+      std::vector<std::unordered_set<std::string>> removed_nodes; 
+      std::vector<std::vector<std::string>> node_stack; 
 
       std::ostream &out; 
   }; 

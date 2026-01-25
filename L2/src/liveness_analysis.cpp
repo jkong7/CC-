@@ -248,7 +248,7 @@ namespace L2{
         std::cout << "\n\n";  
     }
 
-    void LivenessAnalysisBehavior::generate_in_out_sets(Program p) {
+    void LivenessAnalysisBehavior::generate_in_out_sets(const Program &p) {
         for (int i = 0; i < (int)livenessData.size(); i++) {
             bool change = true; 
             auto& functionInstructions = p.functions[i]->instructions; 
@@ -290,12 +290,10 @@ namespace L2{
         }
     }
 
-    void LivenessAnalysisBehavior::generate_register_edges() {
 
-    }
-
-    void LivenessAnalysisBehavior::generate_interference_graph(Program p) {
+    void LivenessAnalysisBehavior::generate_interference_graph(const Program &p) {
         for (int i = 0; i<(int)livenessData.size(); i++) {
+            nodeDegrees.emplace_back(); 
             interferenceGraph.emplace_back(); 
             auto& functionInterferenceGraph = interferenceGraph.back();  
             auto& functionLivenessData = livenessData[i]; 
@@ -317,7 +315,84 @@ namespace L2{
                     add_edges_to_graph(functionInterferenceGraph, rcxVar, GPregisters_without_rcx); 
                 }
             }
+            for (const auto& [key, val] : functionInterferenceGraph) {
+                nodeDegrees[i][key] = val.size(); 
+            }
         }
+        
+    }
+
+    std::string LivenessAnalysisBehavior::pick_low_node(size_t functionIndex) {
+        size_t best = 0; 
+        std::string bestNode; 
+        bool found = false; 
+        for (const auto& [key, val] : nodeDegrees[functionIndex]) {
+            if (!removed_nodes[functionIndex].count(key) && val < 15) {
+                if (val > best || !found) {
+                    found = true; 
+                    best = val; 
+                    bestNode = key; 
+                }
+            }
+        }
+        return bestNode; 
+    }
+
+    std::string LivenessAnalysisBehavior::pick_high_node(size_t functionIndex) {
+        size_t best = 0; 
+        std::string bestNode; 
+        bool found = false; 
+        for (const auto& [key, val] : nodeDegrees[functionIndex]) {
+            if (!removed_nodes[functionIndex].count(key)) {
+                if (val > best || !found) {
+                    found = true; 
+                    best = val; 
+                    bestNode = key; 
+                }
+            }
+        }
+        return bestNode; 
+    }
+
+    void LivenessAnalysisBehavior::update_graph(const std::string &selected, size_t functionIndex) {
+        removed_nodes[functionIndex].insert(selected); 
+        auto it = interferenceGraph[functionIndex].find(selected); 
+        if (it == interferenceGraph[functionIndex].end()) return; 
+        for (const auto& neigh : it -> second) {
+            if (removed_nodes[functionIndex].count(neigh)) { continue ;} 
+            auto& d = nodeDegrees[functionIndex][neigh]; 
+            if (d > 0) d--; 
+        }
+    }
+
+    void LivenessAnalysisBehavior::select_nodes() {
+        for (int i = 0; i < (int)nodeDegrees.size(); i++) {
+            auto& functionNodeDegrees = nodeDegrees[i]; 
+            bool hasPick = true; 
+            while (hasPick) {
+                std::string selected; 
+                std::string low_node = pick_low_node(i);
+                if (low_node.empty()) {
+                    std::string high_node = pick_high_node(i);
+                    if (high_node.empty()) {
+                        hasPick = false; 
+                    } else {
+                        selected = high_node; 
+                        node_stack[i].push_back(high_node); 
+                    }
+                } else {
+                    selected = low_node; 
+                    node_stack[i].push_back(low_node); 
+                }
+                if (!selected.empty()) {
+                    update_graph(selected, i); 
+                }
+            }
+        } 
+    }
+
+    void LivenessAnalysisBehavior::color_graph() {
+        
     }
 
     void LivenessAnalysisBehavior::print_in_out_sets() {
