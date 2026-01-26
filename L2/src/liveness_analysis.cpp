@@ -3,7 +3,6 @@
 #include <fstream>
 
 #include <liveness_analysis.h>
-#include <helper.h> 
 
 
 namespace L2{
@@ -20,11 +19,11 @@ namespace L2{
                 clear_function_containers();
                 p.functions[i]->accept(*this);
                 generate_in_out_sets(p);
-                generate_interference_graph(p);
-                if (color_graph()) break; 
-                spill(); 
+                generate_interference_graph(p); // add all keys (a key might not have any interference neighbors??)
+                if (color_graph()) break; // so now we spilloutputs and coloroutputs for each function 
+                spill(p, cur_f);  // do this with another concrete visitor, output of it creates new instruction list, set f -> inst to new list
             }
-            cur_f++; 
+            cur_f=i; 
         }
 
         //print_liveness_tests();
@@ -455,9 +454,6 @@ namespace L2{
         return true; 
     }
 
-    void LivenessAnalysisBehavior::spill() {
-
-    }
 
     void LivenessAnalysisBehavior::print_in_out_sets() {
         for (size_t f = 0; f < livenessData.size(); ++f) {
