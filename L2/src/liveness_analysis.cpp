@@ -402,6 +402,9 @@ namespace L2{
         for (int j = 0; j<(int)functionLivenessData.size(); j++) {
             livenessSets& ls = functionLivenessData[j];
             Instruction* cur_instruction = functionInstructions[j]; 
+            for (const auto& v: variables[cur_f]) {
+                functionInterferenceGraph[v];
+            }
             add_edges_to_graph(functionInterferenceGraph, ls.in, ls.in);
             add_edges_to_graph(functionInterferenceGraph, ls.out, ls.out);
             add_edges_to_graph(functionInterferenceGraph, ls.kill, ls.out); 
