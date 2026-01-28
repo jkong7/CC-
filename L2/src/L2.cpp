@@ -74,6 +74,14 @@ ItemType Memory::kind() const {
   return ItemType::MemoryItem; 
 }
 
+Item* Memory::getVar() {
+  return var;
+}
+
+Number* Memory::getOffset() {
+  return offset; 
+}
+
 std::string Register::emit (const EmitOptions& options) const {
   std::ostringstream s; 
   std::string reg = options.eightBitRegister ? eightBitReg_assembly_from_register(ID) : options.indirectRegCall ? indirect_call_reg_assembly_from_register(ID) : options.livenessAnalysis ? string_from_register(ID) : assembly_from_register(ID); 

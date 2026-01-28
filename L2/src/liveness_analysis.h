@@ -83,7 +83,7 @@ namespace L2{
       std::vector<std::unordered_map<std::string, std::string>> colorOutputs; 
 
       std::vector<size_t> tempCounters;
-      std::vector<size_t> locals; 
+      std::vector<size_t> spillCounters; 
 
       std::ostream &out; 
   }; 

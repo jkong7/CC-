@@ -4,7 +4,6 @@
 
 #include <liveness_analysis.h>
 
-// get variables for each function in gen/kill visitor iteration, add all vars to graph before doing pairs 
 // output of spill should be tempCounter + number of spills (gets # of locals, if we spill everything, we already know though)
 namespace L2{
 
@@ -25,9 +24,9 @@ namespace L2{
                 clear_function_containers();
                 p.functions[i]->accept(*this);
                 generate_in_out_sets(p);
-                generate_interference_graph(p); // add all keys (a key might not have any interference neighbors??)
+                generate_interference_graph(p);
                 if (color_graph()) break; // so now we have spilloutputs and coloroutputs for each function 
-                tempCounters[i] = spill(p, spillOutputs[i], cur_f, tempCounters[i]);  // do this with another concrete visitor, output of it creates new instruction list, set f -> inst to new list
+                tempCounters[i], spillCounters[i] = spill(p, spillOutputs[i], cur_f, tempCounters[i], spillCounters[i]);  // do this with another concrete visitor, output of it creates new instruction list, set f -> inst to new list
             } 
                 */
             cur_f=i; 
