@@ -6,11 +6,13 @@
 #include <unordered_set> 
 #include <vector> 
 #include <sstream> 
+#include <tuple> 
 #include <liveness_analysis.h>
 #include <L2.h>
 
 
 namespace L2{
+
 
     class SpillBehavior: public Behavior {
         public: 
@@ -32,11 +34,12 @@ namespace L2{
             virtual void act(Instruction_lea &i) override; 
 
             Item* newTemp();
-            Item* read(const Item* src);
-            void write(const Item* dst, const Item* toWrite); 
-        private: 
+            Item* read(Item* src);
+            void write(Item* dst, Item* toWrite); 
+
             size_t spillCounter; 
-            size_t tempCounter;  
+            size_t tempCounter; 
+        private:  
             std::unordered_set<std::string> spillInputs; 
             std::unordered_map<std::string, size_t> varOffsets; 
             size_t functionIndex; 
@@ -44,5 +47,5 @@ namespace L2{
             std::vector<Instruction*> newInstructions;
     };
 
-    void spill(Program &p, const std::unordered_set<std::string> &spillInputs, size_t functionIndex, size_t tempCounter, size_t spillCounter); 
+    std::tuple<size_t, size_t> spill(Program &p, const std::unordered_set<std::string> &spillInputs, size_t functionIndex, size_t tempCounter, size_t spillCounter); 
 }

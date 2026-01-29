@@ -74,7 +74,7 @@ ItemType Memory::kind() const {
   return ItemType::MemoryItem; 
 }
 
-const Item* Memory::getVar() const {
+Item* Memory::getVar() const {
   return var;
 }
 
@@ -280,49 +280,49 @@ void Instruction_lea::accept(Behavior& b) {
   b.act(*this);
 }
 
-const Item* Instruction_assignment::src() const { return src_; }
-const Item* Instruction_assignment::dst() const { return dst_; }
+Item* Instruction_assignment::src() const { return src_; }
+Item* Instruction_assignment::dst() const { return dst_; }
 
-const Item* Instruction_stack_arg_assignment::dst() const { return dst_; }
-const StackArg* Instruction_stack_arg_assignment::src() const { return src_; }
+Item* Instruction_stack_arg_assignment::dst() const { return dst_; }
+StackArg* Instruction_stack_arg_assignment::src() const { return src_; }
 
-const Item* Instruction_aop::dst() const { return dst_; }
+Item* Instruction_aop::dst() const { return dst_; }
 AOP Instruction_aop::aop() const { return aop_; }
-const Item* Instruction_aop::rhs() const { return rhs_; }
+Item* Instruction_aop::rhs() const { return rhs_; }
 
-const Item* Instruction_sop::dst() const { return dst_; }
+Item* Instruction_sop::dst() const { return dst_; }
 SOP Instruction_sop::sop() const { return sop_; }
-const Item* Instruction_sop::src() const { return src_; }
+Item* Instruction_sop::src() const { return src_; }
 
-const Item* Instruction_mem_aop::lhs() const { return lhs_; }
+Item* Instruction_mem_aop::lhs() const { return lhs_; }
 AOP Instruction_mem_aop::aop() const { return aop_; }
-const Item* Instruction_mem_aop::rhs() const { return rhs_; }
+Item* Instruction_mem_aop::rhs() const { return rhs_; }
 
-const Item* Instruction_cmp_assignment::dst() const { return dst_; }
-const Item* Instruction_cmp_assignment::lhs() const { return lhs_; }
+Item* Instruction_cmp_assignment::dst() const { return dst_; }
+Item* Instruction_cmp_assignment::lhs() const { return lhs_; }
 CMP Instruction_cmp_assignment::cmp() const { return cmp_; }
-const Item* Instruction_cmp_assignment::rhs() const { return rhs_; }
+Item* Instruction_cmp_assignment::rhs() const { return rhs_; }
 
-const Item* Instruction_cjump::lhs() const { return lhs_; }
+Item* Instruction_cjump::lhs() const { return lhs_; }
 CMP Instruction_cjump::cmp() const { return cmp_; }
-const Item* Instruction_cjump::rhs() const { return rhs_; }
-const Label* Instruction_cjump::label() const { return label_; }
+Item* Instruction_cjump::rhs() const { return rhs_; }
+Label* Instruction_cjump::label() const { return label_; }
 
-const Label* Instruction_label::label() const { return label_; }
+Label* Instruction_label::label() const { return label_; }
 
-const Label* Instruction_goto::label() const { return label_; }
+Label* Instruction_goto::label() const { return label_; }
 
 CallType Instruction_call::callType() const { return callType_; }
-const Item* Instruction_call::callee() const { return callee_; }
-const Number* Instruction_call::nArgs() const { return nArgs_; }
+Item* Instruction_call::callee() const { return callee_; }
+Number* Instruction_call::nArgs() const { return nArgs_; }
 
-const Item* Instruction_reg_inc_dec::dst() const { return dst_; }
+Item* Instruction_reg_inc_dec::dst() const { return dst_; }
 IncDec Instruction_reg_inc_dec::op() const { return op_; }
 
-const Item* Instruction_lea::dst() const { return dst_; }
-const Item* Instruction_lea::lhs() const { return lhs_; }
-const Item* Instruction_lea::rhs() const { return rhs_; }
-const Number* Instruction_lea::scale() const { return scale_; }
+Item* Instruction_lea::dst() const { return dst_; }
+Item* Instruction_lea::lhs() const { return lhs_; }
+Item* Instruction_lea::rhs() const { return rhs_; }
+Number* Instruction_lea::scale() const { return scale_; }
 
 }
 

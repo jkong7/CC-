@@ -19,16 +19,14 @@ namespace L2{
             p.functions[i]->accept(*this);
             generate_in_out_sets(p);
             generate_interference_graph(p);
-            /*
             while (true) {
                 clear_function_containers();
                 p.functions[i]->accept(*this);
                 generate_in_out_sets(p);
                 generate_interference_graph(p);
                 if (color_graph()) break; // so now we have spilloutputs and coloroutputs for each function 
-                tempCounters[i], spillCounters[i] = spill(p, spillOutputs[i], cur_f, tempCounters[i], spillCounters[i]);  // do this with another concrete visitor, output of it creates new instruction list, set f -> inst to new list
+                std::tie(tempCounters[i], spillCounters[i]) = spill(p, spillOutputs[i], cur_f, tempCounters[i], spillCounters[i]); 
             } 
-                */
             cur_f=i; 
         }
 
@@ -48,8 +46,8 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_assignment& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst(); 
-        const Item* src = i.src(); 
+        Item* dst = i.dst(); 
+        Item* src = i.src(); 
 
         collectVar(src);
         collectVar(dst);
@@ -71,7 +69,7 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_stack_arg_assignment& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst(); 
+        Item* dst = i.dst(); 
    
         collectVar(dst);
 
@@ -85,8 +83,8 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_aop& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst(); 
-        const Item* src = i.rhs(); 
+        Item* dst = i.dst(); 
+        Item* src = i.rhs(); 
 
         collectVar(src);
         collectVar(dst);
@@ -105,8 +103,8 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_sop& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst(); 
-        const Item* src = i.src(); 
+        Item* dst = i.dst(); 
+        Item* src = i.src(); 
 
         collectVar(src);
         collectVar(dst);
@@ -125,8 +123,8 @@ namespace L2{
     
     void LivenessAnalysisBehavior::act(Instruction_mem_aop& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* lhs = i.lhs(); 
-        const Item* rhs = i.rhs(); 
+        Item* lhs = i.lhs(); 
+        Item* rhs = i.rhs(); 
 
         collectVar(lhs);
         collectVar(rhs);
@@ -147,9 +145,9 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_cmp_assignment& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst(); 
-        const Item* lhs = i.lhs(); 
-        const Item* rhs = i.rhs(); 
+        Item* dst = i.dst(); 
+        Item* lhs = i.lhs(); 
+        Item* rhs = i.rhs(); 
 
         collectVar(lhs);
         collectVar(rhs);
@@ -171,8 +169,8 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_cjump& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* lhs = i.lhs(); 
-        const Item* rhs = i.rhs(); 
+        Item* lhs = i.lhs(); 
+        Item* rhs = i.rhs(); 
 
         collectVar(lhs);
         collectVar(rhs);
@@ -215,7 +213,7 @@ namespace L2{
         std::vector<std::string> argument_registers = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
         if (i.callType() == CallType::l1) {
-            const Item* callee = i.callee();
+            Item* callee = i.callee();
 
             collectVar(callee); 
 
@@ -235,7 +233,7 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_reg_inc_dec& i) {
         auto &ls = livenessData[cur_f][cur_i];
-        const Item* dst = i.dst(); 
+        Item* dst = i.dst(); 
 
         collectVar(dst); 
 
@@ -250,9 +248,9 @@ namespace L2{
 
     void LivenessAnalysisBehavior::act(Instruction_lea& i) {
         auto &ls = livenessData[cur_f][cur_i]; 
-        const Item* dst = i.dst();
-        const Item* lhs = i.lhs();
-        const Item* rhs = i.rhs();
+        Item* dst = i.dst();
+        Item* lhs = i.lhs();
+        Item* rhs = i.rhs();
 
         collectVar(lhs);
         collectVar(rhs); 

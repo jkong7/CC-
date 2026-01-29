@@ -114,7 +114,7 @@ namespace L2 {
       std::string emit(const EmitOptions& options = EmitOptions{}) const override;
       ItemType kind() const override; 
 
-      const Item* getVar() const; 
+      Item* getVar() const; 
       Number* getOffset() const; 
 
     private: 
@@ -144,8 +144,8 @@ namespace L2 {
     Instruction_assignment(Item* dst, Item* src);
     void accept(Behavior& b) override;
 
-    const Item* src() const;
-    const Item* dst() const;
+    Item* src() const;
+    Item* dst() const;
 
   private:
     Item* src_;
@@ -157,8 +157,8 @@ namespace L2 {
       Instruction_stack_arg_assignment(Item* dst, StackArg* src);
       void accept(Behavior& b) override; 
 
-      const Item* dst() const; 
-      const StackArg* src() const; 
+      Item* dst() const; 
+      StackArg* src() const; 
 
     private: 
       Item* dst_; 
@@ -171,9 +171,9 @@ namespace L2 {
     Instruction_aop(Item* dst, AOP a, Item* rhs);
     void accept(Behavior& b) override;
 
-    const Item* dst() const;
+    Item* dst() const;
     AOP aop() const;
-    const Item* rhs() const;
+    Item* rhs() const;
 
   private:
     Item* dst_;
@@ -187,9 +187,9 @@ namespace L2 {
     Instruction_sop(Item* dst, SOP s, Item* src);
     void accept(Behavior& b) override;
 
-    const Item* dst() const;
+    Item* dst() const;
     SOP sop() const;
-    const Item* src() const;
+    Item* src() const;
 
   private:
     Item* dst_;
@@ -203,9 +203,9 @@ namespace L2 {
     Instruction_mem_aop(Item* lhs, AOP a, Item* rhs);
     void accept(Behavior& b) override;
 
-    const Item* lhs() const;
+    Item* lhs() const;
     AOP aop() const;
-    const Item* rhs() const;
+    Item* rhs() const;
 
   private:
     Item* lhs_;
@@ -219,10 +219,10 @@ namespace L2 {
     Instruction_cmp_assignment(Item* dst, Item* lhs, CMP c, Item* rhs);
     void accept(Behavior& b) override;
 
-    const Item* dst() const;
-    const Item* lhs() const;
+    Item* dst() const;
+    Item* lhs() const;
     CMP cmp() const;
-    const Item* rhs() const;
+    Item* rhs() const;
 
   private:
     Item* dst_;
@@ -237,10 +237,10 @@ namespace L2 {
     Instruction_cjump(Item* lhs, CMP c, Item* rhs, Label* l);
     void accept(Behavior& b) override;
 
-    const Item* lhs() const;
+    Item* lhs() const;
     CMP cmp() const;
-    const Item* rhs() const;
-    const Label* label() const;
+    Item* rhs() const;
+    Label* label() const;
 
   private:
     Item* lhs_;
@@ -255,7 +255,7 @@ namespace L2 {
     Instruction_label(Label* l);
     void accept(Behavior& b) override;
 
-    const Label* label() const;
+    Label* label() const;
 
   private:
     Label* label_;
@@ -267,7 +267,7 @@ namespace L2 {
     Instruction_goto(Label* l);
     void accept(Behavior& b) override;
 
-    const Label* label() const;
+    Label* label() const;
 
   private:
     Label* label_;
@@ -286,8 +286,8 @@ namespace L2 {
     void accept(Behavior& b) override;
 
     CallType callType() const;
-    const Item* callee() const;
-    const Number* nArgs() const;
+    Item* callee() const;
+    Number* nArgs() const;
 
   private:
     CallType callType_;
@@ -301,7 +301,7 @@ namespace L2 {
     Instruction_reg_inc_dec(Item* r, IncDec i);
     void accept(Behavior& b) override;
 
-    const Item* dst() const;
+    Item* dst() const;
     IncDec op() const;
 
   private:
@@ -315,10 +315,10 @@ namespace L2 {
     Instruction_lea(Item* dst, Item* lhs, Item* rhs, Number* n);
     void accept(Behavior& b) override;
 
-    const Item* dst() const;
-    const Item* lhs() const;
-    const Item* rhs() const;
-    const Number* scale() const;
+    Item* dst() const;
+    Item* lhs() const;
+    Item* rhs() const;
+    Number* scale() const;
 
   private:
     Item* dst_;
