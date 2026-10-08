@@ -49,12 +49,14 @@ namespace CM {
     void line(const std::string &s);
     void label(const std::string &l);
     void jump(const std::string &l);
+    void source_line(const Position &pos);
 
     std::vector<std::string> body;
     std::vector<std::pair<Type, std::string>> temps;
     std::vector<Loop> loops;
     std::string result;
     int depth = 1;
+    int64_t last_line = 0;
     int temp_counter = 0;
     int label_counter = 0;
     std::ofstream &out;

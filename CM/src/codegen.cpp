@@ -50,6 +50,7 @@ namespace CM {
     temps.clear();
     loops.clear();
     depth = 1;
+    last_line = 0;
 
     out << lb_type(f.return_type) << " " << f.name << " (";
     for (size_t k = 0; k < f.params.size(); k++) {
@@ -166,6 +167,7 @@ namespace CM {
   }
 
   void CodeGenBehavior::branch(Expression* e, const std::string &on_true, const std::string &on_false) {
+    source_line(e->pos);
     if (auto* b = dynamic_cast<Binary*>(e)) {
       if (b->op_ == land) {
         std::string mid = fresh_label();
@@ -216,6 +218,7 @@ namespace CM {
   }
 
   void CodeGenBehavior::act(Declaration& s) {
+    source_line(s.pos);
     for (auto &[name, init] : s.declarators_) {
       std::string value = init ? gen(init) : "";
       line(lb_type(s.type_) + " " + name);
@@ -224,6 +227,7 @@ namespace CM {
   }
 
   void CodeGenBehavior::act(Assign& s) {
+    source_line(s.pos);
     std::vector<std::string> idxs;
     for (auto* idx : s.indexes_) idxs.push_back(gen(idx));
     std::string target = s.target_->name_;
@@ -245,6 +249,7 @@ namespace CM {
   }
 
   void CodeGenBehavior::act(ExpressionStatement& s) {
+    source_line(s.pos);
     gen(s.expression_);
   }
 
@@ -310,6 +315,7 @@ namespace CM {
   }
 
   void CodeGenBehavior::act(Return& s) {
+    source_line(s.pos);
     if (s.value_) {
       line("return " + gen(s.value_));
     } else {
@@ -342,6 +348,13 @@ namespace CM {
 
   void CodeGenBehavior::label(const std::string &l) {
     body.push_back(std::string(2 * (depth - 1), ' ') + l);
+  }
+
+  void CodeGenBehavior::source_line(const Position &pos) {
+    if (pos.line != last_line) {
+      body.push_back("//#line " + std::to_string(pos.line));
+      last_line = pos.line;
+    }
   }
 
   void CodeGenBehavior::jump(const std::string &l) {

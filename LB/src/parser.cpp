@@ -39,6 +39,7 @@ namespace LB {
   bool parsing_indexes = false;
   size_t index_begin = 0;
   size_t args_begin = 0;
+  int64_t directive_line = 0;
   size_t decl_begin = 0;
 
   OP last_op;
@@ -46,7 +47,7 @@ namespace LB {
 
   template< typename Input >
   static void add_instruction(const Input& in, Instruction* i) {
-    i->line_ = static_cast<int64_t>(in.position().line);
+    i->line_ = directive_line > 0 ? directive_line : static_cast<int64_t>(in.position().line);
     scopes.back().push_back(i);
   }
 
@@ -226,12 +227,19 @@ namespace LB {
       pegtl::seq< TAO_PEGTL_STRING("//"), pegtl::until< pegtl::eolf > >
     > {};
 
+  struct line_directive_number :
+    pegtl::plus< pegtl::digit > {};
+
+  struct line_directive :
+    pegtl::seq< TAO_PEGTL_STRING("//#line "), line_directive_number, pegtl::until< pegtl::eolf > > {};
+
   struct seps_with_comments :
     pegtl::star<
       pegtl::seq<
         spaces,
         pegtl::sor<
           pegtl::eol,
+          line_directive,
           comment
         >
       >
@@ -591,6 +599,13 @@ namespace LB {
 
   template< typename Rule >
   struct action : pegtl::nothing< Rule > {};
+
+  template<> struct action< line_directive_number > {
+    template<typename Input>
+    static void apply(const Input& in, Program&) {
+      directive_line = std::stoll(in.string());
+    }
+  };
 
   // Types
 
@@ -962,6 +977,7 @@ namespace LB {
     args_begin = 0;
     index_begin = 0;
     cur_int64_dims = 0;
+    directive_line = 0;
 
     if (pegtl::analyze< grammar >() != 0) {
       std::cerr << "There are problems with the grammar" << std::endl;

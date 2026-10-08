@@ -106,7 +106,12 @@ namespace LB {
     }
     out << ") {\n";
 
+    int64_t last_line = 0;
     for (auto* i : f.instructions) {
+      if (i->line_ != last_line) {
+        line("//#line " + std::to_string(i->line_));
+        last_line = i->line_;
+      }
       i->accept(*this);
     }
 
@@ -114,7 +119,7 @@ namespace LB {
       out << "  int64 " << t << "\n";
     }
     for (auto &l : body) {
-      out << (l[0] == ':' ? "" : "  ") << l << "\n";
+      out << (l[0] == ':' || l[0] == '/' ? "" : "  ") << l << "\n";
     }
     out << "}\n\n";
   }
