@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD="$ROOT/build/$(uname -s)-$(uname -m)"
+BIN="$BUILD/bin"
+
+usage() {
+  cat >&2 <<USAGE
+Usage: $(basename "$0") [-o OUTPUT] [-e STAGE] [-k] SOURCE
+
+Lowers SOURCE through every stage below its language and links an executable.
+
+  -o OUTPUT  executable (or emitted file) path, default a.out
+  -e STAGE   stop after producing STAGE: L3, L2, L1 or S
+  -k         keep the intermediate files next to OUTPUT
+USAGE
+  exit 1
+}
+
+OUTPUT="a.out"
+EMIT=""
+KEEP=0
+while getopts "o:e:kh" opt; do
+  case "$opt" in
+    o) OUTPUT="$OPTARG" ;;
+    e) EMIT="$OPTARG" ;;
+    k) KEEP=1 ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 1 ] || usage
+
+SOURCE="$1"
+[ -f "$SOURCE" ] || { echo "$(basename "$0"): no such file: $SOURCE" >&2; exit 1; }
+SOURCE="$(cd "$(dirname "$SOURCE")" && pwd)/$(basename "$SOURCE")"
+case "$OUTPUT" in
+  /*) ;;
+  *) OUTPUT="$PWD/$OUTPUT" ;;
+esac
+
+case "$SOURCE" in
+  *.IR) STAGE=IR ;;
+  *.L3) STAGE=L3 ;;
+  *.L2) STAGE=L2 ;;
+  *.L1) STAGE=L1 ;;
+  *.S)  STAGE=S ;;
+  *) echo "$(basename "$0"): unknown source language: $SOURCE" >&2; exit 1 ;;
+esac
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+cd "$WORK"
+
+next_stage() {
+  case "$1" in
+    IR) echo L3 ;;
+    L3) echo L2 ;;
+    L2) echo L1 ;;
+    L1) echo S ;;
+  esac
+}
+
+run_stage() {
+  case "$1" in
+    IR) "$BIN/IR" "$2" ;;
+    L3) "$BIN/L3" "$2" ;;
+    L2) "$BIN/L2" -g 1 "$2" ;;
+    L1) "$BIN/L1" -g 1 "$2" ;;
+  esac
+}
+
+FILE="$SOURCE"
+while [ "$STAGE" != "S" ]; do
+  NEXT="$(next_stage "$STAGE")"
+  run_stage "$STAGE" "$FILE" > "$WORK/$STAGE.log" 2>&1 || {
+    echo "$(basename "$0"): $STAGE compiler failed on $FILE" >&2
+    tail -n 20 "$WORK/$STAGE.log" >&2
+    exit 1
+  }
+  OUT_FILE="$WORK/prog.$NEXT"
+  [ "$NEXT" = "S" ] || [ -f "$OUT_FILE" ] || { echo "$(basename "$0"): $STAGE produced no prog.$NEXT" >&2; exit 1; }
+  if [ "$NEXT" = "S" ]; then
+    OUT_FILE="$WORK/prog.S"
+  fi
+  mv "$OUT_FILE" "$WORK/stage.$NEXT"
+  FILE="$WORK/stage.$NEXT"
+  if [ "$KEEP" = 1 ]; then
+    cp "$FILE" "${OUTPUT}.$NEXT"
+  fi
+  STAGE="$NEXT"
+  if [ "$STAGE" = "$EMIT" ]; then
+    cp "$FILE" "$OUTPUT"
+    exit 0
+  fi
+done
+
+if [ ! -f "$BUILD/runtime.o" ]; then
+  echo "$(basename "$0"): linking needs an x86_64 host, run it through scripts/dev" >&2
+  exit 1
+fi
+
+cp "$FILE" "$WORK/prog.S"
+${CC:-gcc} -no-pie -z noexecstack -o "$OUTPUT" "$WORK/prog.S" "$BUILD/runtime.o"
