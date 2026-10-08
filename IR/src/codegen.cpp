@@ -98,125 +98,68 @@ namespace IR {
         << "\n";
   }
 
-void CodeGenBehavior::act(Instruction_index_load& i) {
-  std::string base = i.src_->emit();
+  std::string CodeGenBehavior::element_address(const std::string& base, const std::vector<Item*>& indexes, bool tuple) {
+    const size_t dims = indexes.size();
+    const int64_t header = tuple ? 8 : 8 * static_cast<int64_t>(dims + 1);
 
-  // Tuple case
-  if (is_tuple_var(cur_function, base)) {
+    std::string index;
+    int64_t constant_index = 0;
+    bool all_constant = true;
+    for (size_t d = 0; d < dims; d++) {
+      auto* n = dynamic_cast<Number*>(indexes[d]);
+      if (d > 0) {
+        std::string len_enc = temp();
+        std::string len = temp();
+        std::string addr = temp();
+        out << addr << " <- " << base << " + " << (8 * (d + 1)) << "\n";
+        out << len_enc << " <- load " << addr << "\n";
+        out << len << " <- " << len_enc << " >> 1\n";
+        if (all_constant) {
+          index = temp();
+          out << index << " <- " << constant_index << " * " << len << "\n";
+        } else {
+          out << index << " <- " << index << " * " << len << "\n";
+        }
+        all_constant = false;
+        if (n) {
+          out << index << " <- " << index << " + " << n->number_ << "\n";
+        } else {
+          out << index << " <- " << index << " + " << indexes[d]->emit() << "\n";
+        }
+        continue;
+      }
+      if (n) {
+        constant_index = n->number_;
+      } else {
+        all_constant = false;
+        index = temp();
+        out << index << " <- " << indexes[d]->emit() << "\n";
+      }
+    }
+
     std::string addr = temp();
-    out << addr << " <- " << base << " + 8\n";
+    if (all_constant) {
+      out << addr << " <- " << base << " + " << (header + 8 * constant_index) << "\n";
+      return addr;
+    }
+    std::string offset = temp();
+    out << offset << " <- " << index << " << 3\n";
+    out << offset << " <- " << offset << " + " << base << "\n";
+    out << addr << " <- " << offset << " + " << header << "\n";
+    return addr;
+  }
 
-    std::string off = temp();
-    out << off << " <- " << i.indexes_[0]->emit() << " * 8\n";
-    out << addr << " <- " << addr << " + " << off << "\n";
-
+  void CodeGenBehavior::act(Instruction_index_load& i) {
+    std::string base = i.src_->emit();
+    std::string addr = element_address(base, i.indexes_, is_tuple_var(cur_function, base));
     out << i.dst_->emit() << " <- load " << addr << "\n";
-    return;
   }
 
-  // array case
-  const size_t dims = i.indexes_.size();
-
-  std::vector<std::string> lengths;
-  lengths.reserve(dims);
-
-  for (size_t d = 0; d < dims; d++) {
-    std::string addr = temp();
-    std::string len_enc = temp();
-    std::string len = temp();
-
-    out << addr << " <- " << base << " + " << (8 * (d + 1)) << "\n";
-    out << len_enc << " <- load " << addr << "\n";
-    out << len << " <- " << len_enc << " >> 1\n";
-
-    lengths.push_back(len);
-  }
-
-  std::vector<std::string> idxs;
-  idxs.reserve(dims);
-  for (size_t d = 0; d < dims; d++) {
-    idxs.push_back(i.indexes_[d]->emit());
-  }
-
-  std::string index = idxs[0];
-  for (size_t d = 1; d < dims; d++) {
-    std::string mul = temp();
-    std::string add = temp();
-    out << mul << " <- " << index << " * " << lengths[d] << "\n";
-    out << add << " <- " << mul << " + " << idxs[d] << "\n";
-    index = add;
-  }
-
-  std::string offset_body = temp();
-  out << offset_body << " <- " << index << " * 8\n";
-
-  std::string offset = temp();
-  out << offset << " <- " << offset_body << " + " << (8 * (dims + 1)) << "\n";
-
-  std::string addr = temp();
-  out << addr << " <- " << base << " + " << offset << "\n";
-
-  out << i.dst_->emit() << " <- load " << addr << "\n";
-}
-
-void CodeGenBehavior::act(Instruction_index_store& i) {
-  std::string base = i.dst_->emit();
-
-  if (is_tuple_var(cur_function, base)) {
-    std::string addr = temp();
-    out << addr << " <- " << base << " + 8\n";
-
-    std::string off = temp();
-    out << off << " <- " << i.indexes_[0]->emit() << " * 8\n";
-    out << addr << " <- " << addr << " + " << off << "\n";
-
+  void CodeGenBehavior::act(Instruction_index_store& i) {
+    std::string base = i.dst_->emit();
+    std::string addr = element_address(base, i.indexes_, is_tuple_var(cur_function, base));
     out << "store " << addr << " <- " << i.src_->emit() << "\n";
-    return;
   }
-
-  const size_t dims = i.indexes_.size();
-
-  std::vector<std::string> lengths;
-  lengths.reserve(dims);
-
-  for (size_t d = 0; d < dims; d++) {
-    std::string addr = temp();
-    std::string len_enc = temp();
-    std::string len = temp();
-
-    out << addr << " <- " << base << " + " << (8 * (d + 1)) << "\n";
-    out << len_enc << " <- load " << addr << "\n";
-    out << len << " <- " << len_enc << " >> 1\n";
-
-    lengths.push_back(len);
-  }
-
-  std::vector<std::string> idxs;
-  idxs.reserve(dims);
-  for (size_t d = 0; d < dims; d++) {
-    idxs.push_back(i.indexes_[d]->emit());
-  }
-
-  std::string index = idxs[0];
-  for (size_t d = 1; d < dims; d++) {
-    std::string mul = temp();
-    std::string add = temp();
-    out << mul << " <- " << index << " * " << lengths[d] << "\n";
-    out << add << " <- " << mul << " + " << idxs[d] << "\n";
-    index = add;
-  }
-
-  std::string offset_body = temp();
-  out << offset_body << " <- " << index << " * 8\n";
-
-  std::string offset = temp();
-  out << offset << " <- " << offset_body << " + " << (8 * (dims + 1)) << "\n";
-
-  std::string addr = temp();
-  out << addr << " <- " << base << " + " << offset << "\n";
-
-  out << "store " << addr << " <- " << i.src_->emit() << "\n";
-}
 
   void CodeGenBehavior::act(Instruction_length& i) {
 
@@ -230,18 +173,17 @@ void CodeGenBehavior::act(Instruction_index_store& i) {
   void CodeGenBehavior::act(Instruction_length_t& i) {
 
     std::string addr = temp();
-    std::string len_encoded = temp();
 
-    out << addr << " <- " << i.src_->emit() << " + 8\n";
+    if (auto* n = dynamic_cast<Number*>(i.t_)) {
+      out << addr << " <- " << i.src_->emit() << " + " << (8 * (n->number_ + 1)) << "\n";
+    } else {
+      std::string dim_offset = temp();
+      out << dim_offset << " <- " << i.t_->emit() << " << 3\n";
+      out << dim_offset << " <- " << dim_offset << " + " << i.src_->emit() << "\n";
+      out << addr << " <- " << dim_offset << " + 8\n";
+    }
 
-    std::string dim_offset = temp();
-    out << dim_offset << " <- " << i.t_->emit() << " * 8\n";
-
-    out << addr << " <- " << addr << " + " << dim_offset << "\n";
-
-    out << len_encoded << " <- load " << addr << "\n";
-
-    out << i.dst_->emit() << " <- " << len_encoded << "\n";
+    out << i.dst_->emit() << " <- load " << addr << "\n";
   }
 
   void CodeGenBehavior::act(Instruction_call& i) {

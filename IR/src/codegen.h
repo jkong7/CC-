@@ -44,7 +44,8 @@ namespace IR{
     void act(Instruction_return_t& i) override;
 
   private: 
-    std::string temp(); 
+    std::string temp();
+    std::string element_address(const std::string& base, const std::vector<Item*>& indexes, bool tuple);
 
     Function* cur_function = nullptr;
     BasicBlock* cur_bb = nullptr;
