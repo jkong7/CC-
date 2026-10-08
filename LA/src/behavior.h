@@ -1,0 +1,59 @@
+#pragma once
+
+namespace LA {
+  class Program; 
+  class Function; 
+
+  class Instruction_declare; 
+  class Instruction_assignment; 
+  class Instruction_op; 
+
+  class Instruction_index_load; 
+  class Instruction_index_store; 
+
+  class Instruction_length_t; 
+  class Instruction_length; 
+
+  class Instruction_call; 
+  class Instruction_call_assignment; 
+
+  class Instruction_new_array; 
+  class Instruction_new_tuple; 
+
+  class Instruction_label; 
+  class Instruction_break_uncond; 
+  class Instruction_break_cond; 
+
+  class Instruction_return_t;
+  class Instruction_return; 
+
+  class Behavior {
+    public:
+      virtual ~Behavior() = default;
+
+      virtual void act(Program &p) = 0;
+      virtual void act(Function &f) = 0;
+
+      virtual void act(Instruction_declare &i) = 0;
+      virtual void act(Instruction_assignment &i) = 0;
+      virtual void act(Instruction_op &i) = 0;
+      virtual void act(Instruction_index_load &i) = 0;
+      virtual void act(Instruction_index_store &i) = 0;
+
+      virtual void act(Instruction_length_t &i) = 0;
+      virtual void act(Instruction_length &i) = 0;
+
+      virtual void act(Instruction_call &i) = 0;
+      virtual void act(Instruction_call_assignment &i) = 0;
+      
+      virtual void act(Instruction_new_array &i) = 0;
+      virtual void act(Instruction_new_tuple &i) = 0;
+
+      virtual void act(Instruction_label &i) = 0;
+      virtual void act(Instruction_break_uncond &i) = 0;
+      virtual void act(Instruction_break_cond &i) = 0;
+      virtual void act(Instruction_return_t &i) = 0;
+      virtual void act(Instruction_return &i) = 0;
+  };
+
+} 
