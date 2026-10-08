@@ -1,0 +1,9 @@
+void main () {
+  int64[] a
+  int64 x
+  int64 i
+  a <- new Array(3)
+  i <- input()
+  x <- a[i]
+  print(x)
+}

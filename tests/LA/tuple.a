@@ -1,0 +1,61 @@
+int64 add (int64 a, int64 b) {
+  int64 r
+  r <- a + b
+  return r
+}
+
+int64 mul (int64 a, int64 b) {
+  int64 r
+  r <- a * b
+  return r
+}
+
+int64 fold (code f, int64[] xs, int64 init) {
+  int64 n
+  int64 i
+  int64 acc
+  int64 c
+  int64 x
+  n <- length xs 0
+  acc <- init
+  i <- 0
+  :loop
+  c <- i < n
+  br c :body :done
+  :body
+  x <- xs[i]
+  acc <- f(acc, x)
+  i <- i + 1
+  br :loop
+  :done
+  return acc
+}
+
+void main () {
+  int64[] xs
+  tuple pair
+  code f
+  int64 r
+  int64 i
+  int64 c
+  xs <- new Array(5)
+  i <- 0
+  :fill
+  c <- i < 5
+  br c :fill_body :use
+  :fill_body
+  r <- i + 1
+  xs[i] <- r
+  i <- i + 1
+  br :fill
+  :use
+  pair <- new Tuple(2)
+  f <- add
+  r <- fold(f, xs, 0)
+  pair[0] <- r
+  r <- fold(mul, xs, 1)
+  pair[1] <- r
+  print(pair)
+  r <- length pair
+  print(r)
+}

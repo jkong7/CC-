@@ -1,0 +1,12 @@
+void main () {
+  int64[] a
+  int64 x
+  int64 i
+  i <- input()
+  br i :alloc :use
+  :alloc
+  a <- new Array(3)
+  :use
+  x <- a[i]
+  print(x)
+}

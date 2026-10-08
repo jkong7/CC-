@@ -1,0 +1,48 @@
+int64 sum_to (int64 n) {
+  int64 total
+  int64 i
+  int64 more
+  total <- 0
+  i <- 1
+  :loop
+  more <- i <= n
+  br more :body :done
+  :body
+  total <- total + i
+  i <- i + 1
+  br :loop
+  :done
+  return total
+}
+
+void main () {
+  int64 x
+  int64 y
+  int64 z
+  x <- 7
+  y <- -3
+  z <- x + y
+  print(z)
+  z <- x - y
+  print(z)
+  z <- x * y
+  print(z)
+  z <- y * 4
+  print(z)
+  z <- x & 3
+  print(z)
+  z <- x << 2
+  print(z)
+  z <- x >> 1
+  print(z)
+  z <- x < y
+  print(z)
+  z <- y <= x
+  print(z)
+  z <- x = 7
+  print(z)
+  z <- 6 * 7
+  print(z)
+  z <- sum_to(100)
+  print(z)
+}

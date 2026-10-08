@@ -1,0 +1,45 @@
+int64[][] make (int64 rows, int64 cols) {
+  int64[][] m
+  int64 i
+  int64 j
+  int64 c
+  int64 v
+  m <- new Array(rows, cols)
+  i <- 0
+  :rows
+  c <- i < rows
+  br c :row_body :done
+  :row_body
+  j <- 0
+  :cols
+  c <- j < cols
+  br c :col_body :next_row
+  :col_body
+  v <- i * 10
+  v <- v + j
+  m[i][j] <- v
+  j <- j + 1
+  br :cols
+  :next_row
+  i <- i + 1
+  br :rows
+  :done
+  return m
+}
+
+void main () {
+  int64[][] m
+  int64 r
+  int64 c
+  int64 x
+  m <- make(3, 4)
+  r <- length m 0
+  c <- length m 1
+  print(r)
+  print(c)
+  x <- m[2][3]
+  print(x)
+  print(m)
+  x <- m[1][4]
+  print(x)
+}
