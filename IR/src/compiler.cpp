@@ -20,6 +20,7 @@
 #include <behavior.h>
 #include <codegen.h>
 #include <optimize.h>
+#include <inline.h>
 
 std::string read_file(const char *path) {
   std::ifstream in(path);
@@ -82,6 +83,7 @@ int main(
 
   auto p = IR::parse_file(argv[optind]);
   if (optLevel > 0) {
+    IR::inline_functions(p);
     IR::optimize(p);
   }
   p.linearize_bb();
