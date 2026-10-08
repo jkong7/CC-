@@ -9,12 +9,12 @@ usage() {
   cat >&2 <<USAGE
 Usage: $(basename "$0") [-o OUTPUT] [-e STAGE] [-k] SOURCE
 
-SOURCE is an LA (.a), IR, L3, L2, L1 or assembly (.S) file.
+SOURCE is an LB (.b), LA (.a), IR, L3, L2, L1 or assembly (.S) file.
 
 Lowers SOURCE through every stage below its language and links an executable.
 
   -o OUTPUT  executable (or emitted file) path, default a.out
-  -e STAGE   stop after producing STAGE: IR, L3, L2, L1 or S
+  -e STAGE   stop after producing STAGE: a, IR, L3, L2, L1 or S
   -k         keep the intermediate files next to OUTPUT
 USAGE
   exit 1
@@ -43,6 +43,7 @@ case "$OUTPUT" in
 esac
 
 case "$SOURCE" in
+  *.b)  STAGE=LB ;;
   *.a)  STAGE=LA ;;
   *.IR) STAGE=IR ;;
   *.L3) STAGE=L3 ;;
@@ -58,6 +59,7 @@ cd "$WORK"
 
 next_stage() {
   case "$1" in
+    LB) echo a ;;
     LA) echo IR ;;
     IR) echo L3 ;;
     L3) echo L2 ;;
@@ -68,6 +70,7 @@ next_stage() {
 
 run_stage() {
   case "$1" in
+    LB) "$BIN/LB" "$2" ;;
     LA) "$BIN/LA" "$2" ;;
     IR) "$BIN/IR" "$2" ;;
     L3) "$BIN/L3" "$2" ;;
@@ -94,8 +97,11 @@ while [ "$STAGE" != "S" ]; do
   if [ "$KEEP" = 1 ]; then
     cp "$FILE" "${OUTPUT}.$NEXT"
   fi
-  STAGE="$NEXT"
-  if [ "$STAGE" = "$EMIT" ]; then
+  case "$NEXT" in
+    a) STAGE=LA ;;
+    *) STAGE="$NEXT" ;;
+  esac
+  if [ "$NEXT" = "$EMIT" ]; then
     cp "$FILE" "$OUTPUT"
     exit 0
   fi
