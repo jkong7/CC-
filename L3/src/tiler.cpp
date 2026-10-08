@@ -271,16 +271,18 @@ void TilingEngine::tile_tree(const Tree& t) {
 }
 
 
+  static const char* const ARG_REGISTERS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
   void TilingEngine::initialize_function_args(const std::vector<Variable*> var_arguments) {
     std::vector<Variable*> vars = var_arguments;
     emitter_.line(std::to_string(vars.size())); 
     for (size_t idx = 0; idx < vars.size(); idx++) {
-      if (idx == 0) emitter_.line(vars[idx]->emit() + " <- rdi");
-      if (idx == 1) emitter_.line(vars[idx]->emit() + " <- rsi");
-      if (idx == 2) emitter_.line(vars[idx]->emit() + " <- rdx");
-      if (idx == 3) emitter_.line(vars[idx]->emit() + " <- rcx");
-      if (idx == 4) emitter_.line(vars[idx]->emit() + " <- r8");
-      if (idx == 5) emitter_.line(vars[idx]->emit() + " <- r9");
+      if (idx < 6) {
+        emitter_.line(vars[idx]->emit() + " <- " + ARG_REGISTERS[idx]);
+      } else {
+        int64_t offset = 8 * static_cast<int64_t>(vars.size() - 1 - idx);
+        emitter_.line(vars[idx]->emit() + " <- stack-arg " + std::to_string(offset));
+      }
     }
   }
 
@@ -288,12 +290,12 @@ void TilingEngine::tile_tree(const Tree& t) {
   void TilingEngine::handle_call(const CallT* call) {
     for (size_t idx = 0; idx < call->args_.size(); ++idx) {
       std::string arg = call->args_[idx]->emit();
-      if (idx == 0) emitter_.line("rdi <- " + arg);
-      if (idx == 1) emitter_.line("rsi <- " + arg);
-      if (idx == 2) emitter_.line("rdx <- " + arg);
-      if (idx == 3) emitter_.line("rcx <- " + arg);
-      if (idx == 4) emitter_.line("r8 <- " + arg);
-      if (idx == 5) emitter_.line("r9 <- " + arg);
+      if (idx < 6) {
+        emitter_.line(std::string(ARG_REGISTERS[idx]) + " <- " + arg);
+      } else {
+        int64_t offset = -16 - 8 * static_cast<int64_t>(idx - 6);
+        emitter_.line("mem rsp " + std::to_string(offset) + " <- " + arg);
+      }
     }
 
     CallType c = call->c_;

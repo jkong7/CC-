@@ -1,0 +1,30 @@
+define @mix (%a, %b, %c, %d, %e, %f, %g, %h, %i) {
+  %r <- %a * 1
+  %t <- %b * 2
+  %r <- %r + %t
+  %t <- %c * 3
+  %r <- %r + %t
+  %t <- %d * 4
+  %r <- %r + %t
+  %t <- %e * 5
+  %r <- %r + %t
+  %t <- %f * 6
+  %r <- %r + %t
+  %t <- %g * 7
+  %r <- %r + %t
+  %t <- %h * 8
+  %r <- %r + %t
+  %t <- %i * 9
+  %r <- %r + %t
+  return %r
+}
+
+define @main () {
+  %r <- call @mix (1, 1, 1, 1, 1, 1, 1, 1, 1)
+  %s <- call @mix (9, 8, 7, 6, 5, 4, 3, 2, 1)
+  %r <- %r + %s
+  %r <- %r << 1
+  %r <- %r + 1
+  call print (%r)
+  return
+}
