@@ -4,3 +4,5 @@ lib/
 *.d
 a.out
 prog.*
+core
+*.core
