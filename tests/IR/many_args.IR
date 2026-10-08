@@ -1,0 +1,23 @@
+define int64 @poly (int64 %a, int64 %b, int64 %c, int64 %d, int64 %e, int64 %f, int64 %g, int64 %h) {
+  :entry
+  int64 %r
+  int64 %t
+  %r <- %a - %b
+  %t <- %c * %d
+  %r <- %r + %t
+  %t <- %e - %f
+  %r <- %r + %t
+  %t <- %g * %h
+  %r <- %r + %t
+  return %r
+}
+
+define void @main () {
+  :entry
+  int64 %r
+  %r <- call @poly(10, 3, 4, 5, 9, 2, 6, 7)
+  %r <- %r << 1
+  %r <- %r + 1
+  call print(%r)
+  return
+}

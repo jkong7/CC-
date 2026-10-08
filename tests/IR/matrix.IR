@@ -1,0 +1,107 @@
+define int64[][] @identity (int64 %n) {
+  :entry
+  int64[][] %m
+  int64 %i
+  int64 %c
+  int64 %enc
+  %enc <- %n << 1
+  %enc <- %enc + 1
+  %m <- new Array(%enc, %enc)
+  %i <- 0
+  br :loop
+  :loop
+  %c <- %i < %n
+  br %c :body :done
+  :body
+  %m[%i][%i] <- 7
+  %i <- %i + 1
+  br :loop
+  :done
+  return %m
+}
+
+define void @main () {
+  :entry
+  int64[][] %a
+  int64[][] %b
+  int64[][] %p
+  int64 %i
+  int64 %j
+  int64 %k
+  int64 %c
+  int64 %x
+  int64 %y
+  int64 %acc
+  int64 %v
+  int64 %rows
+  int64 %cols
+  %a <- new Array(5, 7)
+  %b <- call @identity(3)
+  %i <- 0
+  br :fill_i
+  :fill_i
+  %c <- %i < 2
+  br %c :fill_j_init :mul_init
+  :fill_j_init
+  %j <- 0
+  br :fill_j
+  :fill_j
+  %c <- %j < 3
+  br %c :fill_body :fill_next
+  :fill_body
+  %v <- %i * 3
+  %v <- %v + %j
+  %v <- %v << 1
+  %v <- %v + 1
+  %a[%i][%j] <- %v
+  %j <- %j + 1
+  br :fill_j
+  :fill_next
+  %i <- %i + 1
+  br :fill_i
+  :mul_init
+  %p <- new Array(5, 7)
+  %rows <- length %a 0
+  %cols <- length %a 1
+  call print(%rows)
+  call print(%cols)
+  %i <- 0
+  br :mi
+  :mi
+  %c <- %i < 2
+  br %c :mj_init :out
+  :mj_init
+  %j <- 0
+  br :mj
+  :mj
+  %c <- %j < 3
+  br %c :mk_init :mi_next
+  :mk_init
+  %k <- 0
+  %acc <- 0
+  br :mk
+  :mk
+  %c <- %k < 3
+  br %c :mk_body :mj_next
+  :mk_body
+  %x <- %a[%i][%k]
+  %y <- %b[%k][%j]
+  %x <- %x >> 1
+  %y <- %y >> 1
+  %x <- %x * %y
+  %acc <- %acc + %x
+  %k <- %k + 1
+  br :mk
+  :mj_next
+  %acc <- %acc << 1
+  %acc <- %acc + 1
+  %p[%i][%j] <- %acc
+  %j <- %j + 1
+  br :mj
+  :mi_next
+  %i <- %i + 1
+  br :mi
+  :out
+  call print(%p)
+  return
+}

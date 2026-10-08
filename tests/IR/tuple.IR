@@ -1,0 +1,20 @@
+define void @main () {
+  :entry
+  tuple %t
+  tuple %inner
+  int64 %len
+  int64 %x
+  %t <- new Tuple(7)
+  %inner <- new Tuple(5)
+  %inner[0] <- 21
+  %inner[1] <- 43
+  %t[0] <- 3
+  %t[1] <- %inner
+  %t[2] <- 9
+  %len <- length %t
+  call print(%len)
+  %x <- %inner[1]
+  call print(%x)
+  call print(%t)
+  return
+}

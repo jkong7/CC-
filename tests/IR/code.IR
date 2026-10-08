@@ -1,0 +1,43 @@
+define int64 @inc (int64 %x) {
+  :entry
+  int64 %r
+  %r <- %x + 2
+  return %r
+}
+
+define int64 @dbl (int64 %x) {
+  :entry
+  int64 %r
+  %r <- %x << 1
+  %r <- %r - 1
+  return %r
+}
+
+define int64 @apply_n (code %f, int64 %n, int64 %x) {
+  :entry
+  int64 %c
+  %c <- %n = 0
+  br %c :done :step
+  :step
+  %x <- call %f(%x)
+  %n <- %n - 1
+  %x <- call @apply_n(%f, %n, %x)
+  return %x
+  :done
+  return %x
+}
+
+define void @main () {
+  :entry
+  code %f
+  int64 %r
+  int64 %in
+  %in <- call input()
+  %f <- @inc
+  %r <- call @apply_n(%f, 4, %in)
+  call print(%r)
+  %f <- @dbl
+  %r <- call @apply_n(%f, 3, %in)
+  call print(%r)
+  return
+}
