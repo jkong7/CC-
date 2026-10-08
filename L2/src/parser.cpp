@@ -123,6 +123,14 @@ namespace L2 {
   struct str_rax : TAO_PEGTL_STRING( "rax" ) {};
 
   struct str_rsp : TAO_PEGTL_STRING( "rsp" ) {};
+  struct str_rbx : TAO_PEGTL_STRING( "rbx" ) {};
+  struct str_rbp : TAO_PEGTL_STRING( "rbp" ) {};
+  struct str_r10 : TAO_PEGTL_STRING( "r10" ) {};
+  struct str_r11 : TAO_PEGTL_STRING( "r11" ) {};
+  struct str_r12 : TAO_PEGTL_STRING( "r12" ) {};
+  struct str_r13 : TAO_PEGTL_STRING( "r13" ) {};
+  struct str_r14 : TAO_PEGTL_STRING( "r14" ) {};
+  struct str_r15 : TAO_PEGTL_STRING( "r15" ) {};
 
   struct register_rdi_rule:
       str_rdi {};
@@ -147,6 +155,30 @@ namespace L2 {
 
   struct register_rsp_rule: 
       str_rsp {}; 
+
+  struct register_rbx_rule: 
+      str_rbx {}; 
+
+  struct register_rbp_rule: 
+      str_rbp {}; 
+
+  struct register_r10_rule: 
+      str_r10 {}; 
+
+  struct register_r11_rule: 
+      str_r11 {}; 
+
+  struct register_r12_rule: 
+      str_r12 {}; 
+
+  struct register_r13_rule: 
+      str_r13 {}; 
+
+  struct register_r14_rule: 
+      str_r14 {}; 
+
+  struct register_r15_rule: 
+      str_r15 {}; 
 
   struct variable_rule:
     pegtl::seq<
@@ -175,7 +207,15 @@ namespace L2 {
   struct w_register_rule:
     pegtl::sor<
       a_register_rule, 
-      register_rax_rule
+      register_rax_rule,
+      register_rbx_rule,
+      register_rbp_rule,
+      register_r10_rule,
+      register_r11_rule,
+      register_r12_rule,
+      register_r13_rule,
+      register_r14_rule,
+      register_r15_rule
     > {};
   
 
@@ -703,6 +743,46 @@ struct Instruction_rule:
   template<> struct action<register_rsp_rule> {
     template<typename Input>
     static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::rsp)); }
+  };
+
+  template<> struct action<register_rbx_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::rbx)); }
+  };
+
+  template<> struct action<register_rbp_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::rbp)); }
+  };
+
+  template<> struct action<register_r10_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r10)); }
+  };
+
+  template<> struct action<register_r11_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r11)); }
+  };
+
+  template<> struct action<register_r12_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r12)); }
+  };
+
+  template<> struct action<register_r13_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r13)); }
+  };
+
+  template<> struct action<register_r14_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r14)); }
+  };
+
+  template<> struct action<register_r15_rule> {
+    template<typename Input>
+    static void apply(const Input&, Program&) { parsed_items.push_back(new Register(RegisterID::r15)); }
   };
 
 
