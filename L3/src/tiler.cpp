@@ -53,6 +53,23 @@ namespace L3 {
     return "?cmp";
   }
 
+  static bool is_commutative(OP op) {
+    return op == plus || op == times || op == at;
+  }
+
+  static bool is_number_leaf(const Tree* t, int64_t& n) {
+    if (!t || !is_leaf(*t)) return false;
+    if (auto* x = std::get_if<NumberLeaf>(&*t->leaf)) {
+      n = x->n;
+      return true;
+    }
+    return false;
+  }
+
+  static bool is_var_leaf(const Tree* t) {
+    return t && is_leaf(*t) && std::holds_alternative<VarLeaf>(*t->leaf);
+  }
+
   static std::string compute_prefix_from_program(const Program& p) {
     std::string longest = "L";
     for (auto* f : p.functions) {
@@ -175,7 +192,7 @@ std::string TilingEngine::lower_expr(const Tree* t) {
       const Tree* src = ptr(t->rhs);
       assert(src && "Load must have address (rhs)");
 
-      std::string addr = lower_expr(src);
+      std::string addr = lower_address(src);
 
       std::string tmp;
       if (dst && is_leaf(*dst)) {
@@ -184,7 +201,7 @@ std::string TilingEngine::lower_expr(const Tree* t) {
         tmp = emitter_.fresh_tmp();
       }
 
-      emitter_.line(tmp + " <- mem " + addr + " 0");
+      emitter_.line(tmp + " <- mem " + addr);
       return tmp;
     }
 
@@ -208,9 +225,7 @@ void TilingEngine::tile_tree(const Tree& t) {
       assert(dstNode && rhsNode);
       assert(is_leaf(*dstNode) && "Assign lhs should be a leaf variable");
 
-      std::string dst = leaf_node_to_str(dstNode);
-      std::string val = lower_expr(rhsNode);
-      emitter_.line(dst + " <- " + val);
+      lower_assign(leaf_node_to_str(dstNode), rhsNode);
       break;
     }
 
@@ -221,8 +236,8 @@ void TilingEngine::tile_tree(const Tree& t) {
       assert(is_leaf(*dstNode) && "Load lhs should be a leaf variable");
 
       std::string dst  = leaf_node_to_str(dstNode);
-      std::string addr = lower_expr(srcNode);
-      emitter_.line(dst + " <- mem " + addr + " 0");
+      std::string addr = lower_address(srcNode);
+      emitter_.line(dst + " <- mem " + addr);
       break;
     }
 
@@ -231,9 +246,9 @@ void TilingEngine::tile_tree(const Tree& t) {
       const Tree* valNode  = ptr(t.rhs);
       assert(addrNode && valNode);
 
-      std::string addr = lower_expr(addrNode);
+      std::string addr = lower_address(addrNode);
       std::string val  = lower_expr(valNode);
-      emitter_.line("mem " + addr + " 0 <- " + val);
+      emitter_.line("mem " + addr + " <- " + val);
       break;
     }
 
@@ -253,8 +268,13 @@ void TilingEngine::tile_tree(const Tree& t) {
       std::string globalLabel = labeler_.make_label(labelName);
 
       if (t.rhs) {
-        std::string cond = lower_expr(ptr(t.rhs));
-        emitter_.line("cjump " + cond + " = 1 " + globalLabel);
+        std::string condition;
+        if (lower_condition(ptr(t.rhs), condition)) {
+          emitter_.line("cjump " + condition + " " + globalLabel);
+        } else {
+          std::string cond = lower_expr(ptr(t.rhs));
+          emitter_.line("cjump " + cond + " = 1 " + globalLabel);
+        }
       } else {
         emitter_.line("goto " + globalLabel);
       }
@@ -270,6 +290,101 @@ void TilingEngine::tile_tree(const Tree& t) {
   }
 }
 
+
+  bool TilingEngine::lower_condition(const Tree* t, std::string& condition) {
+    if (!t || t->kind != TreeType::Cmp) return false;
+    CMP c = *t->cmp;
+    const Tree* lhs = ptr(t->lhs);
+    const Tree* rhs = ptr(t->rhs);
+    bool negate = false;
+
+    int64_t zero;
+    if (c == equal && is_number_leaf(rhs, zero) && zero == 0 && lhs->kind == TreeType::Cmp && *lhs->cmp != equal) {
+      negate = true;
+      c = *lhs->cmp;
+      rhs = ptr(lhs->rhs);
+      lhs = ptr(lhs->lhs);
+    }
+
+    std::string L = lower_expr(lhs);
+    std::string R = lower_expr(rhs);
+
+    if (negate) {
+      switch (c) {
+        case less_than:          c = greater_than_equal; break;
+        case less_than_equal:    c = greater_than;       break;
+        case greater_than:       c = less_than_equal;    break;
+        case greater_than_equal: c = less_than;          break;
+        case equal:              break;
+      }
+    }
+
+    switch (c) {
+      case less_than:
+      case less_than_equal:
+      case equal:
+        condition = L + " " + cmp_to_str(c) + " " + R;
+        break;
+      case greater_than:
+        condition = R + " < " + L;
+        break;
+      case greater_than_equal:
+        condition = R + " <= " + L;
+        break;
+    }
+    return true;
+  }
+
+  std::string TilingEngine::lower_address(const Tree* t) {
+    int64_t offset;
+    if (t->kind == TreeType::BinOp && *t->binOp == plus) {
+      const Tree* lhs = ptr(t->lhs);
+      const Tree* rhs = ptr(t->rhs);
+      if (is_number_leaf(rhs, offset) && offset % 8 == 0 && !is_number_leaf(lhs, offset)) {
+        is_number_leaf(rhs, offset);
+        return lower_expr(lhs) + " " + std::to_string(offset);
+      }
+      if (is_number_leaf(lhs, offset) && offset % 8 == 0 && !is_number_leaf(rhs, offset)) {
+        is_number_leaf(lhs, offset);
+        return lower_expr(rhs) + " " + std::to_string(offset);
+      }
+    }
+    std::string base = lower_expr(t);
+    if (!is_var_leaf(t) && t->kind == TreeType::Leaf) {
+      std::string tmp = emitter_.fresh_tmp();
+      emitter_.line(tmp + " <- " + base);
+      base = tmp;
+    }
+    return base + " 0";
+  }
+
+  void TilingEngine::lower_assign(const std::string& dst, const Tree* rhs) {
+    if (rhs->kind == TreeType::BinOp) {
+      std::string l = lower_expr(ptr(rhs->lhs));
+      std::string r = lower_expr(ptr(rhs->rhs));
+      OP op = *rhs->binOp;
+      if (l == dst) {
+        emitter_.line(dst + " " + op_to_str(op) + " " + r);
+      } else if (r != dst) {
+        emitter_.line(dst + " <- " + l);
+        emitter_.line(dst + " " + op_to_str(op) + " " + r);
+      } else if (is_commutative(op)) {
+        emitter_.line(dst + " " + op_to_str(op) + " " + l);
+      } else {
+        std::string tmp = emitter_.fresh_tmp();
+        emitter_.line(tmp + " <- " + l);
+        emitter_.line(tmp + " " + op_to_str(op) + " " + r);
+        emitter_.line(dst + " <- " + tmp);
+      }
+      return;
+    }
+    std::string condition;
+    if (lower_condition(rhs, condition)) {
+      emitter_.line(dst + " <- " + condition);
+      return;
+    }
+    emitter_.line(dst + " <- " + lower_expr(rhs));
+  }
 
   static const char* const ARG_REGISTERS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 

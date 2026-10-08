@@ -66,6 +66,9 @@ namespace L3 {
 
 
     std::string lower_expr(const Tree* t);
+    bool lower_condition(const Tree* t, std::string& condition);
+    std::string lower_address(const Tree* t);
+    void lower_assign(const std::string& dst, const Tree* rhs);
 
     Emitter emitter_;
     GlobalLabel labeler_; 
