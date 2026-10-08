@@ -70,6 +70,16 @@ namespace L3 {
     return t && is_leaf(*t) && std::holds_alternative<VarLeaf>(*t->leaf);
   }
 
+  static bool is_fresh_tmp(const std::string& s) {
+    return s.rfind("%__tmp", 0) == 0;
+  }
+
+  static bool tree_mentions(const Tree* t, const std::string& var) {
+    if (!t) return false;
+    if (is_leaf(*t)) return leaf_to_str(*t->leaf) == var;
+    return tree_mentions(ptr(t->lhs), var) || tree_mentions(ptr(t->rhs), var);
+  }
+
   static std::string compute_prefix_from_program(const Program& p) {
     std::string longest = "L";
     for (auto* f : p.functions) {
@@ -143,6 +153,14 @@ std::string TilingEngine::lower_expr(const Tree* t) {
       std::string l = lower_expr(lhs);
       std::string r = lower_expr(rhs);
 
+      if (is_fresh_tmp(l) && l != r) {
+        emitter_.line(l + " " + op_to_str(*t->binOp) + " " + r);
+        return l;
+      }
+      if (is_fresh_tmp(r) && is_commutative(*t->binOp)) {
+        emitter_.line(r + " " + op_to_str(*t->binOp) + " " + l);
+        return r;
+      }
       std::string tmp = emitter_.fresh_tmp();
       emitter_.line(tmp + " <- " + l);
       emitter_.line(tmp + " " + op_to_str(*t->binOp) + " " + r);
@@ -360,6 +378,12 @@ void TilingEngine::tile_tree(const Tree& t) {
 
   void TilingEngine::lower_assign(const std::string& dst, const Tree* rhs) {
     if (rhs->kind == TreeType::BinOp) {
+      const Tree* inner = ptr(rhs->lhs);
+      if (inner->kind == TreeType::BinOp && !tree_mentions(ptr(rhs->rhs), dst)) {
+        lower_assign(dst, inner);
+        emitter_.line(dst + " " + op_to_str(*rhs->binOp) + " " + lower_expr(ptr(rhs->rhs)));
+        return;
+      }
       std::string l = lower_expr(ptr(rhs->lhs));
       std::string r = lower_expr(ptr(rhs->rhs));
       OP op = *rhs->binOp;
