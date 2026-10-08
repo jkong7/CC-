@@ -4,11 +4,14 @@
 
 #include <code_generator.h>
 #include <helper.h> 
+#include <peephole.h>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
 namespace L1{
-  CodeGenBehavior::CodeGenBehavior(std::ofstream &out)
+  CodeGenBehavior::CodeGenBehavior(std::ostream &out)
     : out (out) {
       return; 
     }
@@ -161,15 +164,26 @@ namespace L1{
   } 
 
 
-  void generate_code(Program p){
+  void generate_code(Program p, int32_t optLevel){
+
+    std::stringstream assembly;
+    CodeGenBehavior b(assembly);
+    p.accept(b); 
+
+    std::vector<std::string> lines;
+    std::string l;
+    while (std::getline(assembly, l)) {
+      lines.push_back(l);
+    }
+    if (optLevel > 0) {
+      lines = peephole(lines);
+    }
 
     std::ofstream outputFile;
     outputFile.open("prog.S");
-
-    // codegen
-    CodeGenBehavior b(outputFile);
-    p.accept(b); 
-
+    for (auto &line : lines) {
+      outputFile << line << "\n";
+    }
     outputFile.close();
    
     return ;

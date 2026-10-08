@@ -67,7 +67,7 @@ int main(
    * Generate x86_64 assembly.
    */
   if (enable_code_generator){
-    L1::generate_code(p);
+    L1::generate_code(p, optLevel);
   }
 
 

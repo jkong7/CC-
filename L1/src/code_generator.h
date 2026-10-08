@@ -41,7 +41,7 @@ namespace L1{
 
   class CodeGenBehavior : public Behavior {
     public:
-      explicit CodeGenBehavior(std::ofstream &out);
+      explicit CodeGenBehavior(std::ostream &out);
       void act(Program &p) override; 
       void act(Function &f) override; 
       void act(Instruction_assignment &i) override; 
@@ -59,9 +59,9 @@ namespace L1{
 
     private:
       int64_t cur_frame_size; 
-      std::ofstream &out; 
+      std::ostream &out; 
   };
 
-  void generate_code(Program p);
+  void generate_code(Program p, int32_t optLevel = 0);
 
 }
