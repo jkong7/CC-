@@ -147,15 +147,19 @@ namespace LA {
     std::string op = op_to_str(i.op_);
 
     switch (i.op_) {
-      case OP::plus:
-        line(dst + " <- " + a + " + " + b);
-        line(dst + " <- " + dst + " - 1");
+      case OP::plus: {
+        std::string raw = temp();
+        line(raw + " <- " + a + " + " + b);
+        line(dst + " <- " + raw + " - 1");
         return;
+      }
 
-      case OP::minus:
-        line(dst + " <- " + a + " - " + b);
-        line(dst + " <- " + dst + " + 1");
+      case OP::minus: {
+        std::string raw = temp();
+        line(raw + " <- " + a + " - " + b);
+        line(dst + " <- " + raw + " + 1");
         return;
+      }
 
       case OP::at:
         line(dst + " <- " + a + " & " + b);
@@ -172,8 +176,9 @@ namespace LA {
           y = temp();
           line(y + " <- " + value(other) + " - 1");
         }
-        line(dst + " <- " + x + " * " + y);
-        line(dst + " <- " + dst + " + 1");
+        std::string raw = temp();
+        line(raw + " <- " + x + " * " + y);
+        line(dst + " <- " + raw + " + 1");
         return;
       }
 
