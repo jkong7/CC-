@@ -64,6 +64,7 @@ namespace CM {
   struct str_continue : TAO_PEGTL_STRING( "continue" ) {};
   struct str_new      : TAO_PEGTL_STRING( "new" ) {};
   struct str_true     : TAO_PEGTL_STRING( "true" ) {};
+  struct str_do       : TAO_PEGTL_STRING( "do" ) {};
   struct str_false    : TAO_PEGTL_STRING( "false" ) {};
 
   struct kw_int      : kw< str_int > {};
@@ -77,13 +78,14 @@ namespace CM {
   struct kw_continue : kw< str_continue > {};
   struct kw_new      : kw< str_new > {};
   struct kw_true     : kw< str_true > {};
+  struct kw_do       : kw< str_do > {};
   struct kw_false    : kw< str_false > {};
 
   struct keyword :
     pegtl::seq<
       pegtl::sor<
         str_int, str_void, str_if, str_else, str_while, str_for, str_return,
-        str_break, str_continue, str_new, str_true, str_false
+        str_break, str_continue, str_new, str_true, str_false, str_do
       >,
       pegtl::not_at< identifier_other >
     > {};
@@ -156,10 +158,13 @@ namespace CM {
   struct logical_not :
     pegtl::seq< tok< pegtl::seq< pegtl::one< '!' >, pegtl::not_at< pegtl::one< '=' > > > >, unary > {};
 
-  struct unary :
-    pegtl::sor< negate, logical_not, postfix > {};
+  struct bitwise_not :
+    pegtl::seq< sym< '~' >, unary > {};
 
-  struct mul_op   : pegtl::one< '*' > {};
+  struct unary :
+    pegtl::sor< negate, logical_not, bitwise_not, postfix > {};
+
+  struct mul_op   : pegtl::one< '*', '/', '%' > {};
   struct add_op   : pegtl::one< '+', '-' > {};
   struct shift_op : pegtl::sor< TAO_PEGTL_STRING("<<"), TAO_PEGTL_STRING(">>") > {};
   struct rel_op   :
@@ -171,6 +176,8 @@ namespace CM {
     > {};
   struct eq_op    : pegtl::sor< TAO_PEGTL_STRING("=="), TAO_PEGTL_STRING("!=") > {};
   struct band_op  : pegtl::seq< pegtl::one< '&' >, pegtl::not_at< pegtl::one< '&', '=' > > > {};
+  struct bxor_op  : pegtl::seq< pegtl::one< '^' >, pegtl::not_at< pegtl::one< '=' > > > {};
+  struct bor_op   : pegtl::seq< pegtl::one< '|' >, pegtl::not_at< pegtl::one< '|', '=' > > > {};
   struct land_op  : TAO_PEGTL_STRING("&&") {};
   struct lor_op   : TAO_PEGTL_STRING("||") {};
 
@@ -184,11 +191,16 @@ namespace CM {
   struct relational     : left_assoc< rel_op, shift > {};
   struct equality       : left_assoc< eq_op, relational > {};
   struct bitwise_and    : left_assoc< band_op, equality > {};
-  struct logical_and    : left_assoc< land_op, bitwise_and > {};
+  struct bitwise_xor    : left_assoc< bxor_op, bitwise_and > {};
+  struct bitwise_or     : left_assoc< bor_op, bitwise_xor > {};
+  struct logical_and    : left_assoc< land_op, bitwise_or > {};
   struct logical_or     : left_assoc< lor_op, logical_and > {};
 
+  struct conditional :
+    pegtl::seq< logical_or, pegtl::opt< sym< '?' >, expression, sym< ':' >, conditional > > {};
+
   struct expression :
-    pegtl::seq< logical_or > {};
+    pegtl::seq< conditional > {};
 
   /*
    * Statements.
@@ -219,6 +231,10 @@ namespace CM {
       TAO_PEGTL_STRING("-="),
       TAO_PEGTL_STRING("*="),
       TAO_PEGTL_STRING("&="),
+      TAO_PEGTL_STRING("/="),
+      TAO_PEGTL_STRING("%="),
+      TAO_PEGTL_STRING("|="),
+      TAO_PEGTL_STRING("^="),
       TAO_PEGTL_STRING("<<="),
       TAO_PEGTL_STRING(">>=")
     > {};
@@ -273,6 +289,9 @@ namespace CM {
       >
     > {};
 
+  struct do_while_statement :
+    pegtl::seq< kw_do, pegtl::must< statement, kw_while, sym< '(' >, expression, sym< ')' >, sym< ';' > > > {};
+
   struct break_statement :
     pegtl::seq< kw_break, pegtl::must< sym< ';' > > > {};
 
@@ -290,6 +309,7 @@ namespace CM {
       block,
       if_statement,
       while_statement,
+      do_while_statement,
       for_statement,
       break_statement,
       continue_statement,
@@ -321,23 +341,23 @@ namespace CM {
       parse_tree::store_content::on<
         identifier,
         number,
-        mul_op, add_op, shift_op, rel_op, eq_op, band_op, land_op, lor_op,
+        mul_op, add_op, shift_op, rel_op, eq_op, band_op, bxor_op, bor_op, land_op, lor_op,
         assign_op, incdec_op,
         kw_int, kw_void
       >,
       parse_tree::remove_content::on<
         function, parameters, parameter, type_spec, array_dim,
-        block, if_statement, else_branch, while_statement, for_statement,
+        block, if_statement, else_branch, while_statement, do_while_statement, for_statement,
         for_init, for_cond, for_step,
         break_statement, continue_statement, return_statement,
         declaration_body, declarator, assignment, increment, expression_statement, lvalue,
         call, arguments, variable, new_array, index_suffix,
-        true_literal, false_literal, negate, logical_not
+        true_literal, false_literal, negate, logical_not, bitwise_not
       >,
       parse_tree::fold_one::on<
         postfix,
         multiplicative, additive, shift, relational, equality,
-        bitwise_and, logical_and, logical_or
+        bitwise_and, bitwise_xor, bitwise_or, logical_and, logical_or, conditional
       >
     > {};
 
@@ -363,6 +383,10 @@ namespace CM {
     if (s == "-")  return sub;
     if (s == "*")  return mul;
     if (s == "&")  return band;
+    if (s == "/")  return div;
+    if (s == "%")  return mod;
+    if (s == "|")  return bor;
+    if (s == "^")  return bxor;
     if (s == "<<") return shl;
     if (s == ">>") return shr;
     if (s == "<")  return lt;
@@ -425,6 +449,12 @@ namespace CM {
     }
     if (n.is_type< logical_not >()) {
       return at(new Unary(lnot, build_expression(*n.children[0])), n);
+    }
+    if (n.is_type< bitwise_not >()) {
+      return at(new Unary(bnot, build_expression(*n.children[0])), n);
+    }
+    if (n.is_type< conditional >()) {
+      return at(new Conditional(build_expression(*n.children[0]), build_expression(*n.children[1]), build_expression(*n.children[2])), n);
     }
     if (n.children.size() >= 3) {
       Expression* lhs = build_expression(*n.children[0]);
@@ -500,6 +530,9 @@ namespace CM {
       Statement* step_stmt = step.children.empty() ? nullptr : build_simple(*step.children[0]);
       return at(new For(init_stmt, cond_expr, step_stmt, build_statement(*n.children[3])), n);
     }
+    if (n.is_type< do_while_statement >()) {
+      return at(new DoWhile(build_statement(*n.children[0]), build_expression(*n.children[1])), n);
+    }
     if (n.is_type< break_statement >()) {
       return at(new Break(), n);
     }
@@ -525,16 +558,16 @@ namespace CM {
     return f;
   }
 
-  Program parse_file(char *fileName) {
+  template< typename Input >
+  static Program parse_input(Input &input) {
     if (pegtl::analyze< grammar >() != 0) {
       std::cerr << "There are problems with the grammar" << std::endl;
       exit(1);
     }
 
-    file_input<> fileInput(fileName);
     std::unique_ptr<Node> root;
     try {
-      root = parse_tree::parse< grammar, selector >(fileInput);
+      root = parse_tree::parse< grammar, selector >(input);
     } catch (const parse_error &e) {
       const auto p = e.positions().front();
       std::cerr << p.source << ":" << p.line << ":" << p.column << ": error: syntax error" << std::endl;
@@ -546,6 +579,16 @@ namespace CM {
       p.functions.push_back(build_function(*f));
     }
     return p;
+  }
+
+  Program parse_file(char *fileName) {
+    file_input<> input(fileName);
+    return parse_input(input);
+  }
+
+  Program parse_string(const std::string &source, const std::string &name) {
+    memory_input<> input(source, name);
+    return parse_input(input);
   }
 
 }

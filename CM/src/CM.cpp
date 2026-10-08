@@ -60,6 +60,13 @@ namespace CM {
     return;
   }
 
+  Conditional::Conditional(Expression* cond, Expression* then_value, Expression* else_value)
+    : cond_{cond},
+      then_{then_value},
+      else_{else_value} {
+    return;
+  }
+
   NewArray::NewArray(std::vector<Expression*> dims)
     : dims_{std::move(dims)} {
     return;
@@ -122,6 +129,12 @@ namespace CM {
     return;
   }
 
+  DoWhile::DoWhile(Statement* body, Expression* cond)
+    : body_{body},
+      cond_{cond} {
+    return;
+  }
+
   Return::Return(Expression* value)
     : value_{value} {
     return;
@@ -139,6 +152,7 @@ namespace CM {
   void Index::accept(Behavior& b)                { b.act(*this); }
   void Call::accept(Behavior& b)                 { b.act(*this); }
   void NewArray::accept(Behavior& b)             { b.act(*this); }
+  void Conditional::accept(Behavior& b)          { b.act(*this); }
   void Block::accept(Behavior& b)                { b.act(*this); }
   void Declaration::accept(Behavior& b)          { b.act(*this); }
   void Assign::accept(Behavior& b)               { b.act(*this); }
@@ -148,6 +162,7 @@ namespace CM {
   void For::accept(Behavior& b)                  { b.act(*this); }
   void Break::accept(Behavior& b)                { b.act(*this); }
   void Continue::accept(Behavior& b)             { b.act(*this); }
+  void DoWhile::accept(Behavior& b)              { b.act(*this); }
   void Return::accept(Behavior& b)               { b.act(*this); }
 
 
@@ -171,6 +186,10 @@ namespace CM {
       case add:  return "+";
       case sub:  return "-";
       case mul:  return "*";
+      case div:  return "/";
+      case mod:  return "%";
+      case bor:  return "|";
+      case bxor: return "^";
       case band: return "&";
       case shl:  return "<<";
       case shr:  return ">>";

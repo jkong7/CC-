@@ -29,9 +29,9 @@ namespace CM {
 
   // Enums
 
-  enum BinOp {add, sub, mul, band, shl, shr, lt, le, gt, ge, eq, ne, land, lor};
+  enum BinOp {add, sub, mul, div, mod, band, bor, bxor, shl, shr, lt, le, gt, ge, eq, ne, land, lor};
 
-  enum UnOp {neg, lnot};
+  enum UnOp {neg, lnot, bnot};
 
 
   struct Position {
@@ -103,6 +103,16 @@ namespace CM {
 
       std::string callee_;
       std::vector<Expression*> args_;
+  };
+
+  class Conditional : public Expression {
+    public:
+      Conditional(Expression* cond, Expression* then_value, Expression* else_value);
+      void accept(Behavior& b) override;
+
+      Expression* cond_;
+      Expression* then_;
+      Expression* else_;
   };
 
   class NewArray : public Expression {
@@ -202,6 +212,15 @@ namespace CM {
     public:
       Continue();
       void accept(Behavior& b) override;
+  };
+
+  class DoWhile : public Statement {
+    public:
+      DoWhile(Statement* body, Expression* cond);
+      void accept(Behavior& b) override;
+
+      Statement* body_;
+      Expression* cond_;
   };
 
   class Return : public Statement {

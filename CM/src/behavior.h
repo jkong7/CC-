@@ -11,6 +11,7 @@ namespace CM {
   class Index;
   class Call;
   class NewArray;
+  class Conditional;
 
   class Block;
   class Declaration;
@@ -21,6 +22,7 @@ namespace CM {
   class For;
   class Break;
   class Continue;
+  class DoWhile;
   class Return;
 
   class Behavior {
@@ -37,6 +39,7 @@ namespace CM {
       virtual void act(Index &e) = 0;
       virtual void act(Call &e) = 0;
       virtual void act(NewArray &e) = 0;
+      virtual void act(Conditional &e) = 0;
 
       virtual void act(Block &s) = 0;
       virtual void act(Declaration &s) = 0;
@@ -47,6 +50,7 @@ namespace CM {
       virtual void act(For &s) = 0;
       virtual void act(Break &s) = 0;
       virtual void act(Continue &s) = 0;
+      virtual void act(DoWhile &s) = 0;
       virtual void act(Return &s) = 0;
   };
 
