@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+LEVELS="${OPT_LEVELS:-0 1}"
+RUNS="${RUNS:-3}"
+
+instructions() {
+  grep -cE '^\s+[a-z]+' "$1" | tr -d ' '
+}
+
+best_time() {
+  local best=""
+  for _ in $(seq 1 "$RUNS"); do
+    local start end ms
+    start=$(date +%s%N)
+    "$1" > "$WORK/out" < /dev/null
+    end=$(date +%s%N)
+    ms=$(( (end - start) / 1000000 ))
+    if [ -z "$best" ] || [ "$ms" -lt "$best" ]; then best=$ms; fi
+  done
+  echo "$best"
+}
+
+printf "%-12s" "program"
+for level in $LEVELS; do printf "%14s %10s" "-O$level instrs" "ms"; done
+printf "\n"
+
+for source in "$ROOT"/bench/*.cm; do
+  name="$(basename "$source" .cm)"
+  printf "%-12s" "$name"
+  for level in $LEVELS; do
+    "$ROOT/scripts/compile" -O "$level" -k -o "$WORK/$name" "$source" > /dev/null
+    printf "%14s %10s" "$(instructions "$WORK/$name.S")" "$(best_time "$WORK/$name")"
+  done
+  printf "\n"
+done

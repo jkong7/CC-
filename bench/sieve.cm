@@ -1,0 +1,12 @@
+void main() {
+  int n = 3000000;
+  int[] composite = new int[n + 1];
+  int count = 0;
+  for (int i = 2; i <= n; i++) {
+    if (composite[i] == 0) {
+      count++;
+      for (int j = i + i; j <= n; j += i) composite[j] = 1;
+    }
+  }
+  print(count);
+}

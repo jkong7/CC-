@@ -1,0 +1,25 @@
+void main() {
+  int n = 3000;
+  int[] a = new int[n];
+  int seed = 12345;
+  for (int i = 0; i < n; i++) {
+    seed = (seed * 1103 + 12345) & 65535;
+    a[i] = seed;
+  }
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j + 1 < n - i; j++) {
+      if (a[j] > a[j + 1]) {
+        int t = a[j];
+        a[j] = a[j + 1];
+        a[j + 1] = t;
+      }
+    }
+  }
+  int ok = 1;
+  for (int i = 0; i + 1 < n; i++) {
+    if (a[i] > a[i + 1]) ok = 0;
+  }
+  print(ok);
+  print(a[0]);
+  print(a[n - 1]);
+}
