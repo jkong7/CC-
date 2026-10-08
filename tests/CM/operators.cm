@@ -1,0 +1,48 @@
+int gcd(int a, int b) {
+  while (b != 0) {
+    int t = a % b;
+    a = b;
+    b = t;
+  }
+  return a;
+}
+
+int digits(int n) {
+  int count = 0;
+  do {
+    count++;
+    n /= 10;
+  } while (n != 0);
+  return count;
+}
+
+void main() {
+  print(17 / 5);
+  print(-17 / 5);
+  print(17 / -5);
+  print(17 % 5);
+  print(-17 % 5);
+  print(17 % -5);
+  print(1000000007 / 3);
+  print(7 / 0);
+  print(gcd(1071, 462));
+  print(digits(0));
+  print(digits(123456789));
+  print(12 | 5);
+  print(12 ^ 5);
+  print(~12);
+  print(-6 | 3);
+  int x = 10;
+  x |= 1;
+  x ^= 4;
+  x %= 6;
+  print(x);
+  int y = x > 2 ? 100 : 200;
+  print(y);
+  print(x < 2 ? x : y > 150 ? 1 : 2);
+  int[] a = new int[3];
+  a[1] = 9;
+  a[1] /= 2;
+  a[1] |= 8;
+  print(a[1]);
+}
