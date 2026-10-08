@@ -76,7 +76,11 @@ namespace LA {
     out << ") {\n";
 
     for (auto* i : f.instructions) {
+      std::string compare = last_compare_dst;
       i->accept(*this);
+      if (compare == last_compare_dst) {
+        last_compare_dst.clear();
+      }
     }
 
     std::vector<std::string> lines = body;
@@ -183,11 +187,15 @@ namespace LA {
         return;
       }
 
-      default:
-        line(dst + " <- " + a + " " + op + " " + b);
-        line(dst + " <- " + dst + " << 1");
+      default: {
+        std::string raw = temp();
+        line(raw + " <- " + a + " " + op + " " + b);
+        line(dst + " <- " + raw + " << 1");
         line(dst + " <- " + dst + " + 1");
+        last_compare_dst = dst;
+        last_compare_raw = raw;
         return;
+      }
     }
   }
 
@@ -248,6 +256,10 @@ namespace LA {
   void CodeGenBehavior::act(Instruction_break_cond& i) {
     if (auto* n = dynamic_cast<Number*>(i.t_)) {
       line("br " + (n->number_ != 0 ? i.label1_->emit() : i.label2_->emit()));
+      return;
+    }
+    if (!last_compare_dst.empty() && value(i.t_) == last_compare_dst) {
+      line("br " + last_compare_raw + " " + i.label1_->emit() + " " + i.label2_->emit());
       return;
     }
     std::string zero = temp();

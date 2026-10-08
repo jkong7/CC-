@@ -66,6 +66,8 @@ namespace LA{
     std::vector<std::string> body;
     std::vector<std::string> cold;
     std::vector<std::string> temps;
+    std::string last_compare_dst;
+    std::string last_compare_raw;
     int temp_counter = 0;
     int label_counter = 0;
     std::ofstream &out;
