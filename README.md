@@ -9,7 +9,7 @@ A compiler for C-, a small C-like language, written as a chain of seven compiler
 
 | Stage | What it handles |
 | --- | --- |
-| CM | C- source: expressions with C precedence, `&&`/`\|\|` short circuit, `if`/`else`, `while`, `for`, `int` and `int[]...[]` arrays, type checking with line:column diagnostics |
+| CM | C- source: expressions with C precedence and every C integer operator, `&&`/`\|\|` short circuit, `?:`, `if`/`else`, `while`, `do`/`while`, `for`, `int` and `int[]...[]` arrays, type checking with line:column diagnostics |
 | LB | nested scopes with shadowing, `if`/`while` on comparisons, `goto`, `continue`, `break` |
 | LA | plain names and unencoded integers, null and bounds checks on every array access that report the source line, basic block formation |
 | IR | typed variables, basic blocks, multi-dimensional array and tuple addressing, trace-based block linearization |
@@ -42,7 +42,7 @@ void main() {
 }
 ```
 
-Builtins are `print(x)`, `input()` and `length(a, dim)`. Indexing past the end of an array stops the program with the position, the array length and the line.
+Builtins are `print(x)`, `input()` and `length(a, dim)`. None of the lower languages can divide, so `/` and `%` come from a small prelude written in C- (shift and subtract long division with C's truncating semantics) that is compiled in only when a program uses them. Dividing by zero gives 0. `|`, `^` and `~` lower to identities over `+`, `-` and `&`. Indexing past the end of an array stops the program with the position, the array length and the line.
 
 ## Optimizations
 
@@ -57,7 +57,7 @@ Builtins are `print(x)`, `input()` and `length(a, dim)`. Indexing past the end o
 | L2 | save variables prefer their own register and are spilled before real values |
 | L1 | peephole pass for self moves, overwritten moves and jumps to the next instruction |
 
-For `total += i * 3` inside a `for` loop, the loop body at `-O1` is three arithmetic instructions plus the loop increment and one `cmp`/`jge` pair. At `-O0` the same body is about thirty instructions.
+For `total += i * 3` inside a `for` loop, the loop body at `-O1` is one move and three arithmetic instructions plus the loop increment and one `cmp`/`jge` pair. At `-O0` the same body is about thirty instructions.
 
 Static x86-64 instruction counts for the programs in `bench/` (`scripts/bench`):
 
