@@ -133,8 +133,10 @@ namespace L3 {
 
 
 
-  TilingEngine::TilingEngine(std::ostream& out, GlobalLabel& labeler)
-    : emitter_(out), labeler_(labeler) {
+  static const char* const CALLEE_SAVED[] = {"rbx", "rbp", "r12", "r13", "r14", "r15"};
+
+  TilingEngine::TilingEngine(std::ostream& out, GlobalLabel& labeler, bool shuffle_callee_saves)
+    : emitter_(out), labeler_(labeler), shuffle_callee_saves_(shuffle_callee_saves) {
   }
 
 std::string TilingEngine::lower_expr(const Tree* t) {
@@ -275,6 +277,9 @@ void TilingEngine::tile_tree(const Tree& t) {
         std::string val = lower_expr(ptr(t.lhs));
         emitter_.line("rax <- " + val);
       }
+      if (saving_) {
+        for (auto* reg : CALLEE_SAVED) emitter_.line(std::string(reg) + " <- %__callee_save_" + reg);
+      }
       emitter_.line("return");
       break;
     }
@@ -414,7 +419,6 @@ void TilingEngine::tile_tree(const Tree& t) {
 
   void TilingEngine::initialize_function_args(const std::vector<Variable*> var_arguments) {
     std::vector<Variable*> vars = var_arguments;
-    emitter_.line(std::to_string(vars.size())); 
     for (size_t idx = 0; idx < vars.size(); idx++) {
       if (idx < 6) {
         emitter_.line(vars[idx]->emit() + " <- " + ARG_REGISTERS[idx]);
@@ -474,6 +478,21 @@ void TilingEngine::tile_tree(const Tree& t) {
   void TilingEngine::tile_function(Function& f) {
     labeler_.enter_function(f.name);
     emitter_.line("(" + f.name);
+    saving_ = false;
+    if (shuffle_callee_saves_) {
+      for (auto* inst : f.instructions) {
+        auto* call = dynamic_cast<Instruction_call*>(inst);
+        auto* call_assign = dynamic_cast<Instruction_call_assignment*>(inst);
+        if (call || call_assign) {
+          saving_ = true;
+          break;
+        }
+      }
+    }
+    emitter_.line(std::to_string(f.var_arguments.size()));
+    if (saving_) {
+      for (auto* reg : CALLEE_SAVED) emitter_.line(std::string("%__callee_save_") + reg + " <- " + reg);
+    }
     initialize_function_args(f.var_arguments);
     for (const auto& ctx : f.contexts) {
       for (auto& nodePtr : ctx.nodes) {
@@ -491,10 +510,10 @@ void TilingEngine::tile_tree(const Tree& t) {
     emitter_.line(")");
   }
 
-  void tile_program(Program& p, std::ostream& out) {
+  void tile_program(Program& p, std::ostream& out, int32_t optLevel) {
     GlobalLabel labeler{}; 
     labeler.prefix = compute_prefix_from_program(p);
-    TilingEngine eng(out, labeler);
+    TilingEngine eng(out, labeler, optLevel > 0);
     eng.tile(p);
   }
 } 

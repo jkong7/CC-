@@ -90,7 +90,7 @@ int main(
   std::ofstream outputFile;
   outputFile.open("prog.L2");
 
-  tile_program(p, outputFile); 
+  tile_program(p, outputFile, optLevel); 
 
   return 0;
 }

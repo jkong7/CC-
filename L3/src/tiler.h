@@ -50,7 +50,7 @@ namespace L3 {
 
   class TilingEngine {
   public:
-    explicit TilingEngine(std::ostream& out, GlobalLabel& labeler);
+    explicit TilingEngine(std::ostream& out, GlobalLabel& labeler, bool shuffle_callee_saves = false);
     void tile(Program& p);
 
   private:
@@ -72,8 +72,10 @@ namespace L3 {
 
     Emitter emitter_;
     GlobalLabel labeler_; 
+    bool shuffle_callee_saves_ = false;
+    bool saving_ = false;
   };
 
-  void tile_program(Program& p, std::ostream& out);
+  void tile_program(Program& p, std::ostream& out, int32_t optLevel = 0);
 
 } 
