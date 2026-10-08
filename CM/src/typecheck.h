@@ -23,6 +23,7 @@ namespace CM {
     void act(Index& e) override;
     void act(Call& e) override;
     void act(NewArray& e) override;
+    void act(Conditional& e) override;
 
     void act(Block& s) override;
     void act(Declaration& s) override;
@@ -33,6 +34,7 @@ namespace CM {
     void act(For& s) override;
     void act(Break& s) override;
     void act(Continue& s) override;
+    void act(DoWhile& s) override;
     void act(Return& s) override;
 
     std::vector<std::string> errors;

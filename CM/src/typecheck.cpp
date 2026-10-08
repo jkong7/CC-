@@ -134,7 +134,7 @@ namespace CM {
   }
 
   void TypeCheckBehavior::act(Unary& e) {
-    expect_int(e.operand_, e.op_ == neg ? "operand of '-'" : "operand of '!'");
+    expect_int(e.operand_, e.op_ == neg ? "operand of '-'" : e.op_ == lnot ? "operand of '!'" : "operand of '~'");
     e.type = int_type();
   }
 
@@ -194,6 +194,16 @@ namespace CM {
         error(e.args_[k]->pos, "argument " + std::to_string(k + 1) + " of '" + f->name + "' must be " + f->params[k].first.str() + ", found " + t.str());
       }
     }
+  }
+
+  void TypeCheckBehavior::act(Conditional& e) {
+    expect_int(e.cond_, "condition");
+    Type a = check(e.then_);
+    Type b = check(e.else_);
+    if (a != b) {
+      error(e.pos, "branches of '?:' have different types " + a.str() + " and " + b.str());
+    }
+    e.type = a;
   }
 
   void TypeCheckBehavior::act(NewArray& e) {
@@ -267,6 +277,13 @@ namespace CM {
     s.body_->accept(*this);
     loop_depth--;
     scopes.pop_back();
+  }
+
+  void TypeCheckBehavior::act(DoWhile& s) {
+    loop_depth++;
+    s.body_->accept(*this);
+    loop_depth--;
+    expect_int(s.cond_, "condition");
   }
 
   void TypeCheckBehavior::act(Break& s) {
