@@ -273,13 +273,6 @@ void Program::linearize_bb() {
         bb = next; 
       }
     }
-    for (const auto* bb : f->basic_blocks) {
-      std::cout << "Original bb: " << bb->label_->label_ << std::endl;
-    }
-
-    for (const auto* bb : linearized) {
-      std::cout << "Linearized bb: " << bb->label_->label_ << std::endl;
-    }
     f->basic_blocks = std::move(linearized);
   }
 }

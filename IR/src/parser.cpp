@@ -32,7 +32,7 @@
 #include <parser.h>
 #include <helper.h>
 
-static constexpr bool PARSER_DEBUG = true;
+static constexpr bool PARSER_DEBUG = false;
 
 #define PARSER_PRINT(msg) \
   do { if (PARSER_DEBUG) std::cerr << msg << std::endl; } while (0)
