@@ -1,0 +1,17 @@
+(@main
+  (@main 0 0
+    rdi <- 11
+    mem rsp -8 <- :ret
+    call @double 1
+    :ret
+    rdi <- rax
+    call print 1
+    return
+  )
+  (@double 1 0
+    rax <- rdi
+    rax += rdi
+    rax -= 1
+    return
+  )
+)

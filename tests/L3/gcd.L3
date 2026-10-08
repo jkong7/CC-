@@ -1,0 +1,27 @@
+define @gcd (%a, %b) {
+  %z <- %b = 0
+  br %z :gcd_done
+  %q <- %a
+  :gcd_mod
+  %lt <- %q < %b
+  br %lt :gcd_rec
+  %q <- %q - %b
+  br :gcd_mod
+  :gcd_rec
+  %r <- call @gcd (%b, %q)
+  return %r
+  :gcd_done
+  return %a
+}
+
+define @main () {
+  %g <- call @gcd (1071, 462)
+  %e <- %g << 1
+  %e <- %e + 1
+  call print (%e)
+  %g <- call @gcd (270, 192)
+  %e <- %g << 1
+  %e <- %e + 1
+  call print (%e)
+  return
+}

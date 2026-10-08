@@ -13,7 +13,7 @@ ifeq ($(shell uname -m),x86_64)
 BINS     += $(BUILD)/runtime.o
 endif
 
-.PHONY: all clean distclean
+.PHONY: all test clean distclean
 
 all: $(BINS)
 
@@ -40,6 +40,9 @@ $(foreach L,$(LANGS),$(eval $(call LANG_template,$(L))))
 $(BUILD)/runtime.o: runtime/runtime.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+test: all
+	@scripts/test $(T)
 
 clean:
 	rm -rf build

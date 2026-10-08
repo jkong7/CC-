@@ -1,0 +1,53 @@
+define @main () {
+  %arr <- call allocate (13, 1)
+  %i <- 0
+  :fill
+  %c <- %i < 6
+  br %c :fill_body
+  br :sort
+  :fill_body
+  %v <- %i * 7
+  %v <- %v + 3
+  %v <- %v & 15
+  %v <- %v << 1
+  %v <- %v + 1
+  %off <- %i << 3
+  %addr <- %arr + %off
+  %addr <- %addr + 8
+  store %addr <- %v
+  %i <- %i + 1
+  br :fill
+  :sort
+  %outer <- 0
+  :outer_loop
+  %c <- %outer < 6
+  br %c :outer_body
+  br :print
+  :outer_body
+  %j <- 0
+  :inner_loop
+  %lim <- 5 - %outer
+  %c <- %j < %lim
+  br %c :inner_body
+  %outer <- %outer + 1
+  br :outer_loop
+  :inner_body
+  %off <- %j << 3
+  %pa <- %arr + %off
+  %pa <- %pa + 8
+  %pb <- %pa + 8
+  %x <- load %pa
+  %y <- load %pb
+  %c <- %y < %x
+  br %c :swap
+  br :next
+  :swap
+  store %pa <- %y
+  store %pb <- %x
+  :next
+  %j <- %j + 1
+  br :inner_loop
+  :print
+  call print (%arr)
+  return
+}

@@ -1,0 +1,14 @@
+(@main
+  (@main 0 0
+    rdi <- 11
+    rsi <- 7
+    call allocate 2
+    mem rax 8 <- 21
+    rdi <- mem rax 16
+    rdi += 2
+    mem rax 24 <- rdi
+    rdi <- rax
+    call print 1
+    return
+  )
+)

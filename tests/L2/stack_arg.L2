@@ -1,0 +1,37 @@
+(@main
+  (@main 0
+    %base <- 100
+    rdi <- 1
+    rsi <- 2
+    rdx <- 3
+    rcx <- 4
+    r8 <- 5
+    r9 <- 6
+    mem rsp -8 <- :ret
+    mem rsp -16 <- 70
+    mem rsp -24 <- 800
+    call @weighted 8
+    :ret
+    %r <- rax
+    %r += %base
+    %r <<= 1
+    %r++
+    rdi <- %r
+    call print 1
+    return
+  )
+  (@weighted 8
+    %x <- stack-arg 8
+    %y <- stack-arg 0
+    %acc <- rdi
+    %acc += rsi
+    %acc += rdx
+    %acc += rcx
+    %acc += r8
+    %acc += r9
+    %acc += %x
+    %acc += %y
+    rax <- %acc
+    return
+  )
+)

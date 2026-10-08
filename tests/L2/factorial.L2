@@ -1,0 +1,32 @@
+(@main
+  (@main 0
+    %n <- 10
+    rdi <- %n
+    mem rsp -8 <- :fact_ret
+    call @fact 1
+    :fact_ret
+    %r <- rax
+    %r <<= 1
+    %r++
+    rdi <- %r
+    call print 1
+    return
+  )
+  (@fact 1
+    %n <- rdi
+    cjump %n <= 1 :base
+    %m <- %n
+    %m--
+    rdi <- %m
+    mem rsp -8 <- :inner_ret
+    call @fact 1
+    :inner_ret
+    %r <- rax
+    %r *= %n
+    rax <- %r
+    return
+    :base
+    rax <- 1
+    return
+  )
+)

@@ -1,0 +1,25 @@
+define @square (%x) {
+  %r <- %x * %x
+  return %r
+}
+
+define @twice (%f, %x) {
+  %a <- call %f (%x)
+  %b <- call %f (%a)
+  return %b
+}
+
+define @main () {
+  %f <- @square
+  %r <- call @twice (%f, 3)
+  %r <- %r << 1
+  %r <- %r + 1
+  call print (%r)
+  %in <- call input ()
+  %in <- %in >> 1
+  %r <- call @twice (%f, %in)
+  %r <- %r << 1
+  %r <- %r + 1
+  call print (%r)
+  return
+}

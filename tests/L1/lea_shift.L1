@@ -1,0 +1,31 @@
+(@main
+  (@main 0 0
+    rax <- 3
+    rbx <- 4
+    rdi @ rax rbx 8
+    rcx <- 2
+    rdi <<= rcx
+    rdi >>= 1
+    rdi -= 1
+    rdi *= 3
+    rdi &= 255
+    rdi <- rdi
+    rdi <<= 1
+    rdi++
+    call print 1
+    rdi <- 5 <= 5
+    rdi <<= 1
+    rdi++
+    call print 1
+    rdi <- 7 < 5
+    rdi <<= 1
+    rdi++
+    call print 1
+    rdx <- 9
+    rdi <- rdx = 9
+    rdi <<= 1
+    rdi++
+    call print 1
+    return
+  )
+)

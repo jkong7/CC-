@@ -1,0 +1,27 @@
+(@main
+  (@main 0
+    rdi <- 11
+    rsi <- 9
+    call allocate 2
+    %arr <- rax
+    %i <- 0
+    %sum <- 0
+    :loop
+    cjump 5 <= %i :done
+    %addr <- %i
+    %addr <<= 3
+    %addr += %arr
+    %v <- mem %addr 8
+    %v >>= 1
+    %v += %i
+    %sum += %v
+    %i++
+    goto :loop
+    :done
+    %sum <<= 1
+    %sum++
+    rdi <- %sum
+    call print 1
+    return
+  )
+)

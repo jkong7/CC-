@@ -1,0 +1,16 @@
+(@main
+  (@main 0 0
+    rdi <- 0
+    rsi <- 1
+    :loop
+    cjump 10 < rsi :done
+    rdi += rsi
+    rsi++
+    goto :loop
+    :done
+    rdi <<= 1
+    rdi++
+    call print 1
+    return
+  )
+)

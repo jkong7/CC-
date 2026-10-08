@@ -1,0 +1,47 @@
+define int64 @fib (int64 %n) {
+  :entry
+  int64 %c
+  int64 %a
+  int64 %b
+  int64 %r
+  %c <- %n < 2
+  br %c :base :rec
+  :rec
+  %a <- %n - 1
+  %a <- call @fib(%a)
+  %b <- %n - 2
+  %b <- call @fib(%b)
+  %r <- %a + %b
+  return %r
+  :base
+  return %n
+}
+
+define void @main () {
+  :entry
+  int64 %i
+  int64 %f
+  int64 %e
+  int64 %done
+  int64[] %arr
+  int64 %len
+  %arr <- new Array(21)
+  %i <- 0
+  br :loop
+  :loop
+  %done <- %i = 10
+  br %done :out :body
+  :body
+  %f <- call @fib(%i)
+  %e <- %f << 1
+  %e <- %e + 1
+  %arr[%i] <- %e
+  call print(%e)
+  %i <- %i + 1
+  br :loop
+  :out
+  call print(%arr)
+  %len <- length %arr 0
+  call print(%len)
+  return
+}
