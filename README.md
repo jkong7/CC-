@@ -44,6 +44,30 @@ void main() {
 
 Builtins are `print(x)`, `input()` and `length(a, dim)`. Indexing past the end of an array stops the program with the position, the array length and the line.
 
+## Optimizations
+
+`-O1` is the default and `-O0` turns everything below off. Every test runs at both levels.
+
+| Stage | Pass |
+| --- | --- |
+| LA | branch directly on a comparison instead of re-encoding it, compute sums and products into fresh temporaries so the tag adjustments can cancel |
+| IR | global constant propagation (including function values, so indirect calls become direct), copy propagation, algebraic simplification, constant offset folding, null check elimination, liveness-based dead code elimination, branch folding, jump threading, unreachable block removal and block merging, iterated to a fixed point |
+| IR codegen | array addressing that reads only the lengths it needs and folds constant indexes and dimensions |
+| L3 | two-address arithmetic straight into the destination, compare-and-branch as one `cjump`, negated comparisons flipped, constant offsets folded into `mem`, callee-saved registers moved into variables so values live across calls can use them |
+| L2 | save variables prefer their own register and are spilled before real values |
+| L1 | peephole pass for self moves, overwritten moves and jumps to the next instruction |
+
+For `total += i * 3` inside a `for` loop, the loop body at `-O1` is three arithmetic instructions plus the loop increment and one `cmp`/`jge` pair. At `-O0` the same body is about thirty instructions.
+
+Static x86-64 instruction counts for the programs in `bench/` (`scripts/bench`):
+
+| Program | -O0 | -O1 |
+| --- | ---: | ---: |
+| fib | 91 | 59 |
+| matmul | 1133 | 472 |
+| sieve | 238 | 88 |
+| sort | 828 | 341 |
+
 ## Building and running
 
 The compilers build on any platform with a C++17 compiler. Linking and running programs needs an x86-64 Linux machine, so on anything else `scripts/dev` runs a command inside a `linux/amd64` container.
@@ -66,6 +90,7 @@ scripts/dev ./sieve
 ```
 CM/ LB/ LA/ IR/ L3/ L2/ L1/   one compiler per stage, each with src/
 runtime/                      print, allocate, input and the array error handlers
-scripts/                      compile driver, test runner, Docker wrapper, PEGTL bootstrap
+scripts/                      compile driver, test runner, benchmarks, Docker wrapper, PEGTL bootstrap
+bench/                        C- programs used to compare optimization levels
 tests/                        end-to-end programs per stage
 ```
