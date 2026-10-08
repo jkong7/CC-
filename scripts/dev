@@ -13,7 +13,7 @@ case "$PWD/" in
   "$ROOT"/*) WORKDIR="/cc${PWD#$ROOT}" ;;
 esac
 
-FLAGS=(--rm --platform linux/amd64 -v "$ROOT":/cc -w "$WORKDIR")
+FLAGS=(--rm --platform linux/amd64 -e CC_EMULATED=1 -v "$ROOT":/cc -w "$WORKDIR")
 if [ -t 0 ] && [ -t 1 ]; then
   FLAGS+=(-it)
 fi

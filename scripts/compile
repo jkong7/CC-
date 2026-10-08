@@ -86,9 +86,10 @@ FILE="$SOURCE"
 while [ "$STAGE" != "S" ]; do
   NEXT="$(next_stage "$STAGE")"
   run_stage "$STAGE" "$FILE" > "$WORK/$STAGE.log" 2>&1 || {
+    STATUS=$?
     echo "$(basename "$0"): $STAGE compiler failed on $FILE" >&2
     tail -n 20 "$WORK/$STAGE.log" >&2
-    exit 1
+    exit "$STATUS"
   }
   OUT_FILE="$WORK/prog.$NEXT"
   [ "$NEXT" = "S" ] || [ -f "$OUT_FILE" ] || { echo "$(basename "$0"): $STAGE produced no prog.$NEXT" >&2; exit 1; }

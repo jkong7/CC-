@@ -6,6 +6,18 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 FILTER="${1:-}"
+ATTEMPTS=1
+[ "${CC_EMULATED:-0}" = 1 ] && ATTEMPTS=3
+
+retry() {
+  local attempt status
+  for attempt in $(seq 1 "$ATTEMPTS"); do
+    "$@"
+    status=$?
+    [ "$status" -lt 128 ] && return "$status"
+  done
+  return "$status"
+}
 PASS=0
 FAIL=0
 FAILED=()
@@ -23,14 +35,22 @@ for expected in $(find "$ROOT/tests" -name "*.out" | sort); do
   input="/dev/null"
   [ -f "$source.in" ] && input="$source.in"
 
-  if ! "$ROOT/scripts/compile" -o "$exe" "$source" > "$WORK/compile.log" 2>&1; then
+  if ! retry "$ROOT/scripts/compile" -o "$exe" "$source" > "$WORK/compile.log" 2>&1; then
     FAIL=$((FAIL + 1)); FAILED+=("$name (compile)")
     printf "FAIL %s (compile)\n" "$name"
     sed 's/^/     /' "$WORK/compile.log" | tail -n 5
     continue
   fi
 
-  timeout 10 "$exe" < "$input" > "$WORK/actual" 2>&1
+  run() {
+    timeout 10 "$exe" < "$input" > "$WORK/actual" 2>&1
+    local status=$?
+    if [ "$status" -ge 128 ] && [ -s "$WORK/actual" ] && diff -q "$expected" "$WORK/actual" > /dev/null; then
+      return 0
+    fi
+    return "$status"
+  }
+  retry run
   if diff -q "$expected" "$WORK/actual" > /dev/null; then
     PASS=$((PASS + 1))
     printf "ok   %s\n" "$name"
@@ -50,7 +70,7 @@ for expected in $(find "$ROOT/tests" -name "*.err" | sort); do
     *) continue ;;
   esac
 
-  if "$ROOT/scripts/compile" -o "$WORK/prog" "$source" > "$WORK/compile.log" 2>&1; then
+  if retry "$ROOT/scripts/compile" -o "$WORK/prog" "$source" > "$WORK/compile.log" 2>&1; then
     FAIL=$((FAIL + 1)); FAILED+=("$name (compiled)")
     printf "FAIL %s (expected a compile error)\n" "$name"
     continue
