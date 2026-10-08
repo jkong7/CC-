@@ -1,4 +1,7 @@
 #include <codegen.h>
+#include <parser.h>
+#include <typecheck.h>
+#include <sstream>
 
 namespace CM {
 
@@ -34,7 +37,11 @@ namespace CM {
     return false;
   }
 
-  CodeGenBehavior::CodeGenBehavior(std::ofstream &o)
+  bool CodeGenBehavior::needs_division() const {
+    return uses_division;
+  }
+
+  CodeGenBehavior::CodeGenBehavior(std::ostream &o)
     : out (o) {
     return;
   }
@@ -102,14 +109,41 @@ namespace CM {
 
     std::string a = gen(e.lhs_);
     std::string b = gen(e.rhs_);
+    result = arithmetic(e.op_, a, b);
+  }
+
+  std::string CodeGenBehavior::arithmetic(BinOp op, const std::string &a, const std::string &b) {
     std::string t = temp(int_type());
-    if (e.op_ == ne) {
-      line(t + " <- " + a + " = " + b);
-      line(t + " <- 1 - " + t);
-    } else {
-      line(t + " <- " + a + " " + lb_op(e.op_) + " " + b);
+    switch (op) {
+      case ne:
+        line(t + " <- " + a + " = " + b);
+        line(t + " <- 1 - " + t);
+        break;
+      case div:
+      case mod:
+        uses_division = true;
+        line(t + " <- " + std::string(op == div ? "_div" : "_mod") + "(" + a + ", " + b + ")");
+        break;
+      case bor: {
+        std::string both = temp(int_type());
+        line(both + " <- " + a + " & " + b);
+        line(t + " <- " + a + " + " + b);
+        line(t + " <- " + t + " - " + both);
+        break;
+      }
+      case bxor: {
+        std::string both = temp(int_type());
+        line(both + " <- " + a + " & " + b);
+        line(both + " <- " + both + " << 1");
+        line(t + " <- " + a + " + " + b);
+        line(t + " <- " + t + " - " + both);
+        break;
+      }
+      default:
+        line(t + " <- " + a + " " + lb_op(op) + " " + b);
+        break;
     }
-    result = t;
+    return t;
   }
 
   void CodeGenBehavior::act(Unary& e) {
@@ -122,6 +156,8 @@ namespace CM {
     std::string t = temp(int_type());
     if (e.op_ == neg) {
       line(t + " <- 0 - " + a);
+    } else if (e.op_ == bnot) {
+      line(t + " <- -1 - " + a);
     } else {
       line(t + " <- " + a + " = 0");
     }
@@ -155,6 +191,21 @@ namespace CM {
     }
     std::string t = temp(e.type);
     line(t + " <- " + call);
+    result = t;
+  }
+
+  void CodeGenBehavior::act(Conditional& e) {
+    std::string t = temp(e.type);
+    std::string on_true = fresh_label();
+    std::string on_false = fresh_label();
+    std::string done = fresh_label();
+    branch(e.cond_, on_true, on_false);
+    label(on_true);
+    line(t + " <- " + gen(e.then_));
+    jump(done);
+    label(on_false);
+    line(t + " <- " + gen(e.else_));
+    label(done);
     result = t;
   }
 
@@ -240,10 +291,17 @@ namespace CM {
         current = temp(int_type());
         line(current + " <- " + target);
       }
-      std::string t = idxs.empty() ? s.target_->name_ : current;
-      line(t + " <- " + current + " " + lb_op(s.op_) + " " + value);
-      value = t;
-      if (idxs.empty()) return;
+      bool direct = s.op_ == add || s.op_ == sub || s.op_ == mul || s.op_ == band || s.op_ == shl || s.op_ == shr;
+      if (idxs.empty() && direct) {
+        line(current + " <- " + current + " " + lb_op(s.op_) + " " + value);
+        return;
+      }
+      std::string combined = arithmetic(s.op_, current, value);
+      if (idxs.empty()) {
+        line(s.target_->name_ + " <- " + combined);
+        return;
+      }
+      value = combined;
     }
     line(target + " <- " + value);
   }
@@ -306,6 +364,19 @@ namespace CM {
     line("}");
   }
 
+  void CodeGenBehavior::act(DoWhile& s) {
+    std::string loop_body = fresh_label();
+    std::string cond = fresh_label();
+    std::string done = fresh_label();
+    label(loop_body);
+    loops.push_back({cond, done});
+    s.body_->accept(*this);
+    loops.pop_back();
+    label(cond);
+    branch(s.cond_, loop_body, done);
+    label(done);
+  }
+
   void CodeGenBehavior::act(Break& s) {
     jump(loops.back().break_label);
   }
@@ -361,10 +432,58 @@ namespace CM {
     line("goto " + l);
   }
 
+  static const char* PRELUDE = R"(
+int cm_udiv(int a, int b) {
+  int q = 0;
+  int r = 0;
+  for (int i = 61; i >= 0; i--) {
+    r = (r << 1) + ((a >> i) & 1);
+    if (r >= b) {
+      r = r - b;
+      q = q + (1 << i);
+    }
+  }
+  return q;
+}
+
+int cm_div(int a, int b) {
+  if (b == 0) return 0;
+  int negative = 0;
+  if (a < 0) {
+    a = -a;
+    negative = 1 - negative;
+  }
+  if (b < 0) {
+    b = -b;
+    negative = 1 - negative;
+  }
+  int q = cm_udiv(a, b);
+  if (negative) return -q;
+  return q;
+}
+
+int cm_mod(int a, int b) {
+  if (b == 0) return 0;
+  return a - cm_div(a, b) * b;
+}
+)";
+
   void generate_code(Program& p) {
     std::ofstream outputFile("prog.b");
     CodeGenBehavior b(outputFile);
     p.accept(b);
+    if (!b.needs_division()) return;
+
+    Program prelude = parse_string(PRELUDE, "<prelude>");
+    check_program(prelude, "<prelude>");
+    std::stringstream text;
+    CodeGenBehavior pb(text);
+    prelude.accept(pb);
+    std::string lb = text.str();
+    for (size_t at = lb.find("cm_"); at != std::string::npos; at = lb.find("cm_", at)) {
+      lb.replace(at, 3, "_");
+    }
+    outputFile << lb;
   }
 
 }

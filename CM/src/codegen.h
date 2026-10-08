@@ -11,7 +11,8 @@ namespace CM {
 
   class CodeGenBehavior : public Behavior {
   public:
-    CodeGenBehavior(std::ofstream &o);
+    CodeGenBehavior(std::ostream &o);
+    bool needs_division() const;
 
     void act(Program& p) override;
     void act(Function& f) override;
@@ -23,6 +24,7 @@ namespace CM {
     void act(Index& e) override;
     void act(Call& e) override;
     void act(NewArray& e) override;
+    void act(Conditional& e) override;
 
     void act(Block& s) override;
     void act(Declaration& s) override;
@@ -33,6 +35,7 @@ namespace CM {
     void act(For& s) override;
     void act(Break& s) override;
     void act(Continue& s) override;
+    void act(DoWhile& s) override;
     void act(Return& s) override;
 
   private:
@@ -42,6 +45,7 @@ namespace CM {
     };
 
     std::string gen(Expression* e);
+    std::string arithmetic(BinOp op, const std::string &a, const std::string &b);
     void branch(Expression* e, const std::string &on_true, const std::string &on_false);
     std::string temp(Type t);
     std::string fresh_label();
@@ -54,12 +58,13 @@ namespace CM {
     std::vector<std::string> body;
     std::vector<std::pair<Type, std::string>> temps;
     std::vector<Loop> loops;
+    bool uses_division = false;
     std::string result;
     int depth = 1;
     int64_t last_line = 0;
     int temp_counter = 0;
     int label_counter = 0;
-    std::ofstream &out;
+    std::ostream &out;
   };
 
   void generate_code(Program& p);
