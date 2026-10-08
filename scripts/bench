@@ -33,7 +33,10 @@ for source in "$ROOT"/bench/*.cm; do
   name="$(basename "$source" .cm)"
   printf "%-12s" "$name"
   for level in $LEVELS; do
-    "$ROOT/scripts/compile" -O "$level" -k -o "$WORK/$name" "$source" > /dev/null
+    for attempt in 1 2 3; do
+      "$ROOT/scripts/compile" -O "$level" -k -o "$WORK/$name" "$source" > /dev/null 2>&1 && break
+      [ "$attempt" = 3 ] && { echo "compile failed: $source" >&2; exit 1; }
+    done
     printf "%14s %10s" "$(instructions "$WORK/$name.S")" "$(best_time "$WORK/$name")"
   done
   printf "\n"
