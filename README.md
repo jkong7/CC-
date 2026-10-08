@@ -1,0 +1,71 @@
+# CC-
+
+A compiler for C-, a small C-like language, written as a chain of seven compilers in C++. Each stage lowers one intermediate language into the next until the last one emits x86-64 assembly. It started as the Northwestern CS 322 compiler sequence (L1, L2, L3 and IR) and grew from there into a full front end.
+
+```
+ .cm      .b       .a      .IR      .L3      .L2      .L1       .S
+ C-  ──▶  LB  ──▶  LA  ──▶  IR  ──▶  L3  ──▶  L2  ──▶  L1  ──▶ x86-64 ──▶ a.out
+```
+
+| Stage | What it handles |
+| --- | --- |
+| CM | C- source: expressions with C precedence, `&&`/`\|\|` short circuit, `if`/`else`, `while`, `for`, `int` and `int[]...[]` arrays, type checking with line:column diagnostics |
+| LB | nested scopes with shadowing, `if`/`while` on comparisons, `goto`, `continue`, `break` |
+| LA | plain names and unencoded integers, null and bounds checks on every array access that report the source line, basic block formation |
+| IR | typed variables, basic blocks, multi-dimensional array and tuple addressing, trace-based block linearization |
+| L3 | instruction selection by tree tiling after merging trees within each context |
+| L2 | liveness analysis, interference graph, graph coloring register allocation and spilling |
+| L1 | x86-64 code generation for the calling convention used by every stage above |
+
+Values follow the CS 322 representation: integers are tagged as `2n + 1` and pointers are left untagged, so the runtime can print nested arrays without type information.
+
+## A C- program
+
+```c
+int[] sieve(int n) {
+  int[] composite = new int[n + 1];
+  for (int i = 2; i * i <= n; i++) {
+    if (composite[i] == 0) {
+      for (int j = i * i; j <= n; j += i) composite[j] = 1;
+    }
+  }
+  return composite;
+}
+
+void main() {
+  int[] c = sieve(100);
+  int found = 0;
+  for (int i = 2; i <= 100; i++) {
+    if (!c[i]) found++;
+  }
+  print(found);
+}
+```
+
+Builtins are `print(x)`, `input()` and `length(a, dim)`. Indexing past the end of an array stops the program with the position, the array length and the line.
+
+## Building and running
+
+The compilers build on any platform with a C++17 compiler. Linking and running programs needs an x86-64 Linux machine, so on anything else `scripts/dev` runs a command inside a `linux/amd64` container.
+
+```sh
+make                                          # fetches PEGTL into lib/ on first run
+scripts/dev make test                         # build and run every test in the container
+scripts/dev scripts/compile -o sieve tests/CM/primes.cm
+scripts/dev ./sieve
+```
+
+`scripts/compile` accepts a source file from any stage (`.cm`, `.b`, `.a`, `.IR`, `.L3`, `.L2`, `.L1`, `.S`) and lowers it the rest of the way. `-e IR` stops after a given stage and `-k` keeps every intermediate file next to the output, which is the easiest way to see what each stage does.
+
+## Tests
+
+`tests/<stage>/` holds programs for every language with their expected output (`.out`), optional standard input (`.in`), and for programs that must not compile, the expected diagnostics (`.err`). `make test` or `scripts/test <filter>` runs them end to end. CI runs the whole suite on every push.
+
+## Layout
+
+```
+CM/ LB/ LA/ IR/ L3/ L2/ L1/   one compiler per stage, each with src/
+runtime/                      print, allocate, input and the array error handlers
+scripts/                      compile driver, test runner, Docker wrapper, PEGTL bootstrap
+tests/                        end-to-end programs per stage
+```
