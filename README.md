@@ -51,7 +51,7 @@ Builtins are `print(x)`, `input()` and `length(a, dim)`. None of the lower langu
 | Stage | Pass |
 | --- | --- |
 | LA | branch directly on a comparison instead of re-encoding it, compute sums and products into fresh temporaries so the tag adjustments can cancel |
-| IR | global constant propagation (including function values, so indirect calls become direct), copy propagation, algebraic simplification, constant offset folding, null check elimination, liveness-based dead code elimination, branch folding, jump threading, unreachable block removal and block merging, iterated to a fixed point |
+| IR | inlining of small leaf functions, global constant propagation (including function values, so indirect calls become direct), copy propagation, algebraic simplification, constant offset folding, null check elimination, liveness-based dead code elimination, branch folding, jump threading, unreachable block removal and block merging, iterated to a fixed point |
 | IR codegen | array addressing that reads only the lengths it needs and folds constant indexes and dimensions |
 | L3 | two-address arithmetic straight into the destination, compare-and-branch as one `cjump`, negated comparisons flipped, constant offsets folded into `mem`, callee-saved registers moved into variables so values live across calls can use them |
 | L2 | save variables prefer their own register and are spilled before real values |
