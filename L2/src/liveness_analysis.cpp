@@ -502,7 +502,14 @@ namespace L2{
     } 
 
     bool LivenessAnalysisBehavior::color_or_spill_node(const std::string &cur_node, const std::unordered_set<std::string> &neighbors) {
-        for (const auto& color : colorOrder) {
+        std::vector<std::string> order = colorOrder;
+        const std::string save_prefix = "%__callee_save_";
+        if (cur_node.rfind(save_prefix, 0) == 0) {
+            std::string preferred = cur_node.substr(save_prefix.size());
+            order.erase(std::remove(order.begin(), order.end(), preferred), order.end());
+            order.insert(order.begin(), preferred);
+        }
+        for (const auto& color : order) {
             bool found = true; 
             for (const auto& neigh : neighbors) {
                 if (color == neigh || (colorOutputs[cur_f].count(neigh) && color == colorOutputs[cur_f].at(neigh))) {
@@ -531,13 +538,28 @@ namespace L2{
 
             bool spilled = color_or_spill_node(node, graph[node]); // Empty: Take, otherwise prioritize non temp, otherwise prioritize highest neighbors
             if (spilled) {
+                bool node_is_save = node.rfind("%__callee_save_", 0) == 0;
+                bool candidate_is_save = spillCandidate.rfind("%__callee_save_", 0) == 0;
                 if (spillCandidate.empty() 
                     ||
+                    (node_is_save && !candidate_is_save)
+                    ||
+                    (node_is_save == candidate_is_save) && (
                     (spillCandidate.rfind("%S", 0) == 0 &&
                     node.rfind("%S", 0) != 0) 
                     ||
-                    (nodeDegrees[cur_f][node] > nodeDegrees[cur_f][spillCandidate])) {
+                    (nodeDegrees[cur_f][node] > nodeDegrees[cur_f][spillCandidate]))) {
                     spillCandidate = node;
+                }
+            }
+        }
+
+        if (!spillCandidate.empty() && spillCandidate.rfind("%__callee_save_", 0) != 0) {
+            for (const auto* reg : {"rbx", "rbp", "r12", "r13", "r14", "r15"}) {
+                std::string save = std::string("%__callee_save_") + reg;
+                if (graph.count(save)) {
+                    spillCandidate = save;
+                    break;
                 }
             }
         }
