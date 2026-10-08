@@ -1,0 +1,35 @@
+int noisy(int v) {
+  print(v);
+  return v;
+}
+
+void main() {
+  int a = 3;
+  int b = -4;
+  print(noisy(0) && noisy(1));
+  print(noisy(2) || noisy(3));
+  print(noisy(1) && noisy(0) || noisy(5));
+  print(!(a < b) && a != b);
+  print(-a * b << 2 >> 1);
+  print(a & 1);
+  print(a <= 3 && b >= -4 && !(a > 3) && !(b < -4));
+  int x = 10;
+  x -= 3;
+  x *= 2;
+  x <<= 3;
+  x >>= 2;
+  x &= 31;
+  x--;
+  print(x);
+  if (a > 0) print(1); else print(0);
+  if (a < 0) print(1); else if (b < 0) print(2); else print(3);
+  int count = 0;
+  for (int i = 0; i < 20; i++) {
+    if (i & 1) continue;
+    if (i > 12) break;
+    count++;
+  }
+  print(count);
+  print(true);
+  print(false || !false);
+}

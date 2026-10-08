@@ -41,6 +41,32 @@ for expected in $(find "$ROOT/tests" -name "*.out" | sort); do
   fi
 done
 
+for expected in $(find "$ROOT/tests" -name "*.err" | sort); do
+  source="${expected%.err}"
+  [ -f "$source" ] || continue
+  name="${source#$ROOT/tests/}"
+  case "$name" in
+    *"$FILTER"*) ;;
+    *) continue ;;
+  esac
+
+  if "$ROOT/scripts/compile" -o "$WORK/prog" "$source" > "$WORK/compile.log" 2>&1; then
+    FAIL=$((FAIL + 1)); FAILED+=("$name (compiled)")
+    printf "FAIL %s (expected a compile error)\n" "$name"
+    continue
+  fi
+
+  grep -E ": (error|warning): " "$WORK/compile.log" | sed "s|$ROOT/||" > "$WORK/actual"
+  if diff -q "$expected" "$WORK/actual" > /dev/null; then
+    PASS=$((PASS + 1))
+    printf "ok   %s\n" "$name"
+  else
+    FAIL=$((FAIL + 1)); FAILED+=("$name")
+    printf "FAIL %s\n" "$name"
+    diff "$expected" "$WORK/actual" | head -n 10 | sed 's/^/     /'
+  fi
+done
+
 echo
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

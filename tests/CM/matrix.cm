@@ -1,0 +1,45 @@
+int[][] multiply(int[][] a, int[][] b) {
+  int n = length(a, 0);
+  int m = length(b, 1);
+  int k = length(a, 1);
+  int[][] c = new int[n][m];
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+      int sum = 0;
+      for (int x = 0; x < k; x++) {
+        sum += a[i][x] * b[x][j];
+      }
+      c[i][j] = sum;
+    }
+  }
+  return c;
+}
+
+int[][] identity(int n) {
+  int[][] m = new int[n][n];
+  for (int i = 0; i < n; i++) m[i][i] = 1;
+  return m;
+}
+
+int trace(int[][] m) {
+  int t = 0;
+  for (int i = 0; i < length(m, 0); i++) t += m[i][i];
+  return t;
+}
+
+void main() {
+  int[][] a = new int[2][3];
+  int[][] b = new int[3][2];
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 3; j++) {
+      a[i][j] = i + j;
+      b[j][i] = i - j;
+    }
+  }
+  int[][] c = multiply(a, b);
+  print(c);
+  print(trace(c));
+  int[][] p = identity(3);
+  p = multiply(p, multiply(b, a));
+  print(trace(p));
+}

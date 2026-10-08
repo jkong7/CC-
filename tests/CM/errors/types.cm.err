@@ -1,0 +1,7 @@
+tests/CM/errors/types.cm:8:7: error: cannot assign int[] to int
+tests/CM/errors/types.cm:9:3: error: use of undeclared variable 'y'
+tests/CM/errors/types.cm:10:7: error: 'add' takes 2 arguments, found 1
+tests/CM/errors/types.cm:11:3: error: array of type int[] needs 1 indexes, found 2
+tests/CM/errors/types.cm:12:3: error: break outside of a loop
+tests/CM/errors/types.cm:13:13: error: argument 1 of 'add' must be int, found int[]
+tests/CM/errors/types.cm:14:10: error: void function 'main' cannot return a value

@@ -1,0 +1,19 @@
+int weigh(int a, int b, int c, int d, int e, int f, int g, int h, int i) {
+  return a + 2 * b + 3 * c + 4 * d + 5 * e + 6 * f + 7 * g + 8 * h + 9 * i;
+}
+
+int ackermann(int m, int n) {
+  if (m == 0) return n + 1;
+  if (n == 0) return ackermann(m - 1, 1);
+  return ackermann(m - 1, ackermann(m, n - 1));
+}
+
+void main() {
+  print(weigh(1, 1, 1, 1, 1, 1, 1, 1, 1));
+  print(weigh(9, 8, 7, 6, 5, 4, 3, 2, 1));
+  print(ackermann(2, 3));
+  int n = input();
+  int total = 0;
+  for (int k = 0; k < n; k++) total += input();
+  print(total);
+}
