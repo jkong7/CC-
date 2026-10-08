@@ -1,0 +1,47 @@
+/* Binary search over squares, integer square roots and fast modular exponentiation. */
+
+int lower_bound(int[] a, int key) {
+  int lo = 0;
+  int hi = length(a, 0);
+  while (lo < hi) {
+    int mid = (lo + hi) / 2;
+    if (a[mid] < key) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+int isqrt(int n) {
+  int lo = 0;
+  int hi = n + 1;
+  while (hi - lo > 1) {
+    int mid = (lo + hi) >> 1;
+    if (mid * mid <= n) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+
+int power(int base, int exp, int modulus) {
+  int result = 1;
+  base %= modulus;
+  while (exp > 0) {
+    if (exp & 1) result = result * base % modulus;
+    base = base * base % modulus;
+    exp >>= 1;
+  }
+  return result;
+}
+
+void main() {
+  int[] squares = new int[1000];
+  for (int i = 0; i < 1000; i++) squares[i] = i * i;
+  print(lower_bound(squares, 4096));
+  print(lower_bound(squares, 4097));
+  print(lower_bound(squares, 2000000));
+  print(isqrt(1000000));
+  print(isqrt(999999));
+  print(power(2, 62, 1000003));
+  print(power(3, 1000000, 998244353));
+  print(power(7, 0, 13));
+}

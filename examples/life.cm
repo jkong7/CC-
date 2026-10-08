@@ -1,0 +1,51 @@
+/* Conway's Game of Life on a wrapping 12 x 12 board, starting from a glider. */
+
+int neighbors(int[][] board, int r, int c, int n) {
+  int count = 0;
+  for (int dr = -1; dr <= 1; dr++) {
+    for (int dc = -1; dc <= 1; dc++) {
+      if (dr != 0 || dc != 0) {
+        count += board[(r + dr + n) % n][(c + dc + n) % n];
+      }
+    }
+  }
+  return count;
+}
+
+int[][] step(int[][] board, int n) {
+  int[][] next = new int[n][n];
+  for (int r = 0; r < n; r++) {
+    for (int c = 0; c < n; c++) {
+      int k = neighbors(board, r, c, n);
+      next[r][c] = k == 3 || (k == 2 && board[r][c] == 1) ? 1 : 0;
+    }
+  }
+  return next;
+}
+
+int population(int[][] board, int n) {
+  int alive = 0;
+  for (int r = 0; r < n; r++) {
+    for (int c = 0; c < n; c++) alive += board[r][c];
+  }
+  return alive;
+}
+
+void main() {
+  int n = 12;
+  int[][] board = new int[n][n];
+  board[0][1] = 1;
+  board[1][2] = 1;
+  board[2][0] = 1;
+  board[2][1] = 1;
+  board[2][2] = 1;
+  for (int gen = 0; gen < 48; gen++) board = step(board, n);
+  print(population(board, n));
+  int[] row = new int[n];
+  for (int r = 0; r < n; r++) {
+    int bits = 0;
+    for (int c = 0; c < n; c++) bits = bits * 2 + board[r][c];
+    row[r] = bits;
+  }
+  print(row);
+}

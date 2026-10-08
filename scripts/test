@@ -41,10 +41,10 @@ run_program() {
   return "$status"
 }
 
-for expected in $(find "$ROOT/tests" -name "*.out" | sort); do
+for expected in $(find "$ROOT/tests" "$ROOT/examples" -name "*.out" | sort); do
   source="${expected%.out}"
   [ -f "$source" ] || continue
-  name="${source#$ROOT/tests/}"
+  name="${source#$ROOT/}"
   case "$name" in
     *"$FILTER"*) ;;
     *) continue ;;
@@ -78,7 +78,7 @@ done
 for expected in $(find "$ROOT/tests" -name "*.err" | sort); do
   source="${expected%.err}"
   [ -f "$source" ] || continue
-  name="${source#$ROOT/tests/}"
+  name="${source#$ROOT/}"
   case "$name" in
     *"$FILTER"*) ;;
     *) continue ;;

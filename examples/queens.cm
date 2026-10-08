@@ -1,0 +1,29 @@
+/* Counts the placements of n queens on an n x n board with backtracking. */
+
+int safe(int[] cols, int row, int col) {
+  for (int r = 0; r < row; r++) {
+    int c = cols[r];
+    if (c == col) return 0;
+    if (c - col == row - r || col - c == row - r) return 0;
+  }
+  return 1;
+}
+
+int place(int[] cols, int row, int n) {
+  if (row == n) return 1;
+  int total = 0;
+  for (int col = 0; col < n; col++) {
+    if (safe(cols, row, col)) {
+      cols[row] = col;
+      total += place(cols, row + 1, n);
+    }
+  }
+  return total;
+}
+
+void main() {
+  for (int n = 1; n <= 9; n++) {
+    int[] cols = new int[n];
+    print(place(cols, 0, n));
+  }
+}
