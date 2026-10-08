@@ -343,6 +343,123 @@ namespace IR {
   }
 
   /*
+   * Constant offset folding within a block: x <- y + c relations are forwarded
+   * into later additions so encode/decode adjustments cancel out.
+   */
+
+  struct Offset {
+    std::string base;
+    int64_t c;
+  };
+
+  static bool offset_form(Instruction* i, std::string &dst, std::string &base, int64_t &c) {
+    auto* o = dynamic_cast<Instruction_op*>(i);
+    if (!o || (o->op_ != OP::plus && o->op_ != OP::minus)) return false;
+    auto* v = dynamic_cast<Variable*>(o->lhs_);
+    auto* n = dynamic_cast<Number*>(o->rhs_);
+    if (!v || !n) {
+      if (o->op_ != OP::plus) return false;
+      v = dynamic_cast<Variable*>(o->rhs_);
+      n = dynamic_cast<Number*>(o->lhs_);
+      if (!v || !n) return false;
+    }
+    dst = o->dst_->var_;
+    base = v->var_;
+    c = o->op_ == OP::plus ? n->number_ : -n->number_;
+    return true;
+  }
+
+  static Instruction* make_offset(Variable* dst, const std::string &base, int64_t c) {
+    if (c == 0) return new Instruction_assignment(dst, new Variable(base));
+    if (c < 0) return new Instruction_op(dst, new Variable(base), OP::minus, new Number(-c));
+    return new Instruction_op(dst, new Variable(base), OP::plus, new Number(c));
+  }
+
+  static Variable* fresh_variable(Function* f) {
+    static int64_t counter = 0;
+    std::string name;
+    do {
+      name = "%__ofs" + std::to_string(counter++);
+    } while (f->variable_types.count(name));
+    f->variable_types[name] = {Type::int64, 0};
+    return new Variable(name);
+  }
+
+  static bool fold_offsets(Function* f) {
+    bool changed = false;
+    for (auto* bb : f->basic_blocks) {
+      std::map<std::string, Offset> offsets;
+      std::vector<Instruction*> out;
+      for (auto* i : bb->instructions) {
+        std::vector<Instruction*> emitted = {i};
+
+        if (auto* o = dynamic_cast<Instruction_op*>(i)) {
+          auto offset_of = [&](Item* item, Offset &off) {
+            auto* v = dynamic_cast<Variable*>(item);
+            if (!v) return false;
+            auto it = offsets.find(v->var_);
+            if (it == offsets.end()) return false;
+            off = it->second;
+            return true;
+          };
+          Offset l, r;
+          auto* rn = dynamic_cast<Number*>(o->rhs_);
+          if ((o->op_ == OP::plus || o->op_ == OP::minus) && rn && offset_of(o->lhs_, l)) {
+            int64_t c = o->op_ == OP::plus ? l.c + rn->number_ : l.c - rn->number_;
+            emitted = {make_offset(o->dst_, l.base, c)};
+          } else if (o->op_ == OP::plus && offset_of(o->rhs_, r) && !dynamic_cast<Number*>(o->lhs_)) {
+            Variable* partial = fresh_variable(f);
+            emitted = {
+              new Instruction_op(partial, o->lhs_, OP::plus, new Variable(r.base)),
+              make_offset(o->dst_, partial->var_, r.c)
+            };
+          } else if (o->op_ == OP::plus && offset_of(o->lhs_, l) && !dynamic_cast<Number*>(o->rhs_)) {
+            Variable* partial = fresh_variable(f);
+            emitted = {
+              new Instruction_op(partial, new Variable(l.base), OP::plus, o->rhs_),
+              make_offset(o->dst_, partial->var_, l.c)
+            };
+          } else if (o->op_ == OP::minus && offset_of(o->lhs_, l) && !dynamic_cast<Number*>(o->rhs_)) {
+            Variable* partial = fresh_variable(f);
+            emitted = {
+              new Instruction_op(partial, new Variable(l.base), OP::minus, o->rhs_),
+              make_offset(o->dst_, partial->var_, l.c)
+            };
+          }
+        }
+
+        for (auto* e : emitted) {
+          std::string dst, base;
+          int64_t c;
+          std::string pdst, pbase;
+          int64_t pc;
+          if (!out.empty() && offset_form(e, dst, base, c) && base == dst
+              && offset_form(out.back(), pdst, pbase, pc) && pdst == dst) {
+            out.back() = make_offset(defined(out.back()), pbase, pc + c);
+            changed = true;
+          } else {
+            out.push_back(e);
+          }
+          if (e != i) changed = true;
+
+          Instruction* last = out.back();
+          if (Variable* d = defined(last)) {
+            for (auto it = offsets.begin(); it != offsets.end();) {
+              if (it->first == d->var_ || it->second.base == d->var_) it = offsets.erase(it);
+              else ++it;
+            }
+            if (offset_form(last, dst, base, c) && base != dst) {
+              offsets[dst] = Offset{base, c};
+            }
+          }
+        }
+      }
+      bb->instructions = out;
+    }
+    return changed;
+  }
+
+  /*
    * Dead code elimination.
    */
 
@@ -495,6 +612,7 @@ namespace IR {
         bool changed = false;
         changed |= propagate_constants(f);
         changed |= propagate_copies(f);
+        changed |= fold_offsets(f);
         changed |= eliminate_dead_code(f);
         changed |= simplify_cfg(f);
         rebuild_cfg(f);
