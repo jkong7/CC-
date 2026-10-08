@@ -4,7 +4,7 @@ CC       ?= gcc
 CFLAGS   ?= -O2
 
 PEGTL    := lib/PEGTL/include/tao/pegtl.hpp
-LANGS    := L1 L2 L3 IR LA LB
+LANGS    := L1 L2 L3 IR LA LB CM
 PLATFORM := $(shell uname -s)-$(shell uname -m)
 BUILD    := build/$(PLATFORM)
 BINS     := $(addprefix $(BUILD)/bin/,$(LANGS))

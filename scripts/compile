@@ -9,12 +9,12 @@ usage() {
   cat >&2 <<USAGE
 Usage: $(basename "$0") [-o OUTPUT] [-e STAGE] [-k] SOURCE
 
-SOURCE is an LB (.b), LA (.a), IR, L3, L2, L1 or assembly (.S) file.
+SOURCE is a C- (.cm), LB (.b), LA (.a), IR, L3, L2, L1 or assembly (.S) file.
 
 Lowers SOURCE through every stage below its language and links an executable.
 
   -o OUTPUT  executable (or emitted file) path, default a.out
-  -e STAGE   stop after producing STAGE: a, IR, L3, L2, L1 or S
+  -e STAGE   stop after producing STAGE: b, a, IR, L3, L2, L1 or S
   -k         keep the intermediate files next to OUTPUT
 USAGE
   exit 1
@@ -43,6 +43,7 @@ case "$OUTPUT" in
 esac
 
 case "$SOURCE" in
+  *.cm) STAGE=CM ;;
   *.b)  STAGE=LB ;;
   *.a)  STAGE=LA ;;
   *.IR) STAGE=IR ;;
@@ -59,6 +60,7 @@ cd "$WORK"
 
 next_stage() {
   case "$1" in
+    CM) echo b ;;
     LB) echo a ;;
     LA) echo IR ;;
     IR) echo L3 ;;
@@ -70,6 +72,7 @@ next_stage() {
 
 run_stage() {
   case "$1" in
+    CM) "$BIN/CM" "$2" ;;
     LB) "$BIN/LB" "$2" ;;
     LA) "$BIN/LA" "$2" ;;
     IR) "$BIN/IR" "$2" ;;
@@ -98,6 +101,7 @@ while [ "$STAGE" != "S" ]; do
     cp "$FILE" "${OUTPUT}.$NEXT"
   fi
   case "$NEXT" in
+    b) STAGE=LB ;;
     a) STAGE=LA ;;
     *) STAGE="$NEXT" ;;
   esac
