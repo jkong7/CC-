@@ -460,6 +460,122 @@ namespace IR {
   }
 
   /*
+   * Null check elimination: a forward must-analysis of variables known to hold
+   * an allocated object, fed by allocations, copies and the success edge of
+   * an earlier null check.
+   */
+
+  using Names = std::set<std::string>;
+
+  static bool null_test(Instruction* i, std::string &test, std::string &object) {
+    auto* o = dynamic_cast<Instruction_op*>(i);
+    if (!o || o->op_ != OP::equal) return false;
+    Variable* v = nullptr;
+    if (is_number(o->rhs_, 0)) v = dynamic_cast<Variable*>(o->lhs_);
+    else if (is_number(o->lhs_, 0)) v = dynamic_cast<Variable*>(o->rhs_);
+    if (!v) return false;
+    test = o->dst_->var_;
+    object = v->var_;
+    return true;
+  }
+
+  static void transfer_non_null(Names &known, Instruction* i) {
+    Variable* d = defined(i);
+    if (!d) return;
+    known.erase(d->var_);
+    if (dynamic_cast<Instruction_new_array*>(i) || dynamic_cast<Instruction_new_tuple*>(i)) {
+      known.insert(d->var_);
+    } else if (auto* a = dynamic_cast<Instruction_assignment*>(i)) {
+      auto* src = dynamic_cast<Variable*>(a->src_);
+      if (src && known.count(src->var_)) known.insert(d->var_);
+    }
+  }
+
+  static bool checked_on_edge(BasicBlock* from, BasicBlock* to, std::string &object) {
+    auto* br = dynamic_cast<Instruction_break_cond*>(terminator(from));
+    if (!br || br->label1_->label_ == br->label2_->label_) return false;
+    if (to->label_->label_ != br->label2_->label_) return false;
+    auto* t = dynamic_cast<Variable*>(br->t_);
+    if (!t) return false;
+    for (auto it = from->instructions.rbegin() + 1; it != from->instructions.rend(); ++it) {
+      std::string test, obj;
+      if (null_test(*it, test, obj) && test == t->var_) {
+        for (auto later = it.base(); later != from->instructions.end(); ++later) {
+          Variable* d = defined(*later);
+          if (d && d->var_ == obj) return false;
+        }
+        object = obj;
+        return true;
+      }
+      Variable* d = defined(*it);
+      if (d && d->var_ == t->var_) return false;
+    }
+    return false;
+  }
+
+  static bool eliminate_null_checks(Function* f) {
+    if (f->basic_blocks.empty()) return false;
+    Names universe;
+    for (auto* bb : f->basic_blocks) {
+      for (auto* i : bb->instructions) {
+        if (Variable* d = defined(i)) universe.insert(d->var_);
+      }
+    }
+    for (auto* p : f->var_arguments) universe.insert(p->var_);
+
+    auto preds = predecessors(f);
+    std::map<BasicBlock*, Names> out;
+    for (auto* bb : f->basic_blocks) out[bb] = universe;
+
+    auto in_of = [&](BasicBlock* bb) {
+      if (bb == f->basic_blocks[0]) return Names{};
+      Names in = universe;
+      bool first = true;
+      for (auto* p : preds[bb]) {
+        Names edge = out[p];
+        std::string object;
+        if (checked_on_edge(p, bb, object)) edge.insert(object);
+        if (first) {
+          in = edge;
+          first = false;
+        } else {
+          Names both;
+          for (auto &n : in) if (edge.count(n)) both.insert(n);
+          in = both;
+        }
+      }
+      return in;
+    };
+
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (auto* bb : f->basic_blocks) {
+        Names known = in_of(bb);
+        for (auto* i : bb->instructions) transfer_non_null(known, i);
+        if (known != out[bb]) {
+          out[bb] = known;
+          changed = true;
+        }
+      }
+    }
+
+    bool rewrote = false;
+    for (auto* bb : f->basic_blocks) {
+      Names known = in_of(bb);
+      for (auto &i : bb->instructions) {
+        std::string test, object;
+        if (null_test(i, test, object) && known.count(object)) {
+          i = new Instruction_assignment(static_cast<Instruction_op*>(i)->dst_, new Number(0));
+          rewrote = true;
+        }
+        transfer_non_null(known, i);
+      }
+    }
+    return rewrote;
+  }
+
+  /*
    * Dead code elimination.
    */
 
@@ -613,6 +729,7 @@ namespace IR {
         changed |= propagate_constants(f);
         changed |= propagate_copies(f);
         changed |= fold_offsets(f);
+        changed |= eliminate_null_checks(f);
         changed |= eliminate_dead_code(f);
         changed |= simplify_cfg(f);
         rebuild_cfg(f);
