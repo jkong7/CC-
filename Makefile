@@ -5,7 +5,13 @@ CFLAGS   ?= -O2
 
 PEGTL    := lib/PEGTL/include/tao/pegtl.hpp
 LANGS    := L1 L2 L3 IR
-BINS     := $(addprefix bin/,$(LANGS))
+PLATFORM := $(shell uname -s)-$(shell uname -m)
+BUILD    := build/$(PLATFORM)
+BINS     := $(addprefix $(BUILD)/bin/,$(LANGS))
+
+ifeq ($(shell uname -m),x86_64)
+BINS     += $(BUILD)/runtime.o
+endif
 
 .PHONY: all clean distclean
 
@@ -16,14 +22,14 @@ $(PEGTL):
 
 define LANG_template
 $(1)_SRCS := $$(wildcard $(1)/src/*.cpp)
-$(1)_OBJS := $$(patsubst $(1)/src/%.cpp,build/$(1)/%.o,$$($(1)_SRCS))
+$(1)_OBJS := $$(patsubst $(1)/src/%.cpp,$(BUILD)/$(1)/%.o,$$($(1)_SRCS))
 
-build/$(1)/%.o: $(1)/src/%.cpp $(PEGTL)
+$(BUILD)/$(1)/%.o: $(1)/src/%.cpp $(PEGTL)
 	@mkdir -p $$(dir $$@)
 	$$(CXX) $$(CXXFLAGS) -MMD -MP -I$(1)/src -Ilib/PEGTL/include -c $$< -o $$@
 
-bin/$(1): $$($(1)_OBJS)
-	@mkdir -p bin
+$(BUILD)/bin/$(1): $$($(1)_OBJS)
+	@mkdir -p $$(dir $$@)
 	$$(CXX) $$(CXXFLAGS) $$^ -o $$@
 
 -include $$($(1)_OBJS:.o=.d)
@@ -31,8 +37,12 @@ endef
 
 $(foreach L,$(LANGS),$(eval $(call LANG_template,$(L))))
 
+$(BUILD)/runtime.o: runtime/runtime.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean:
-	rm -rf build bin
+	rm -rf build
 
 distclean: clean
 	rm -rf lib

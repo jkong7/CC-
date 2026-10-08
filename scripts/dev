@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+IMAGE="${CC_DEV_IMAGE:-gcc:13}"
+
+if [ "$(uname -s)-$(uname -m)" = "Linux-x86_64" ]; then
+  cd "$ROOT" && exec "$@"
+fi
+
+WORKDIR=/cc
+case "$PWD/" in
+  "$ROOT"/*) WORKDIR="/cc${PWD#$ROOT}" ;;
+esac
+
+FLAGS=(--rm --platform linux/amd64 -v "$ROOT":/cc -w "$WORKDIR")
+if [ -t 0 ] && [ -t 1 ]; then
+  FLAGS+=(-it)
+fi
+
+exec docker run "${FLAGS[@]}" "$IMAGE" "$@"
